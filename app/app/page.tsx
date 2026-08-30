@@ -1,68 +1,414 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
+import { ArrowRight, CalendarDays, ReceiptText } from "lucide-react";
 import { MonthlySnapshot } from "@/components/dashboard/MonthlySnapshot";
-import { StatCard } from "@/components/ui/StatCard";
+import { QuickActionsPanel } from "@/components/dashboard/QuickActionsPanel";
 import { PageShell } from "@/components/ui/PageShell";
-import { getMonthKey } from "@/lib/finance";
+import {
+  calculateMonthlySummary,
+  formatMoney,
+  formatMonthLabel,
+  getMonthKey,
+} from "@/lib/finance";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { cn } from "@/lib/utils/cn";
 
-function readCount(result: { count: number | null; error: { message: string } | null }) {
-  if (result.error) {
-    throw new Error(result.error.message);
-  }
+type AppHomePageProps = {
+  searchParams: Promise<{
+    created?: string;
+    month?: string;
+  }>;
+};
 
-  return String(result.count ?? 0);
+type TransactionView = {
+  amount: number;
+  categoryName: string;
+  date: string;
+  description: string | null;
+  id: string;
+  is_investment: boolean;
+  is_travel_income: boolean;
+  status: "confirmed" | "edited" | "pending";
+  subcategoryName: string;
+  type: "expense" | "income" | "transfer";
+};
+
+function formatDisplayDate(value: string) {
+  const date = new Date(`${value}T00:00:00`);
+
+  return new Intl.DateTimeFormat("es-ES", {
+    day: "numeric",
+    month: "short",
+  }).format(date);
 }
 
-export default async function AppHomePage() {
+function getSignedAmountLabel(
+  amount: number,
+  type: "expense" | "income" | "transfer",
+) {
+  if (type === "expense") {
+    return `-${formatMoney(amount)}`;
+  }
+
+  if (type === "income") {
+    return `+${formatMoney(amount)}`;
+  }
+
+  return formatMoney(amount);
+}
+
+function getAmountTone(type: "expense" | "income" | "transfer") {
+  if (type === "expense") {
+    return "text-rose-700";
+  }
+
+  if (type === "income") {
+    return "text-emerald-700";
+  }
+
+  return "text-slate-900";
+}
+
+function getPrimaryLabel(transaction: TransactionView) {
+  if (transaction.description?.trim()) {
+    return transaction.description.trim();
+  }
+
+  if (transaction.subcategoryName !== "Sin subcategoria") {
+    return transaction.subcategoryName;
+  }
+
+  return transaction.categoryName;
+}
+
+export default async function AppHomePage({ searchParams }: AppHomePageProps) {
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
+  const params = await searchParams;
 
   if (!user) {
     redirect("/login");
   }
 
+  const selectedMonth = params.month || getMonthKey();
+  const monthDate = new Date(`${selectedMonth}-01T00:00:00`);
   const [
-    accounts,
-    categories,
-    subcategories,
-    recurringItems,
-    quickActions,
+    { data: categoriesData },
+    { data: subcategoriesData },
+    { data: accountsData },
+    { data: quickActionsData },
+    { data: transactionRowsData },
   ] = await Promise.all([
-    supabase.from("accounts").select("id", { count: "exact", head: true }),
-    supabase.from("categories").select("id", { count: "exact", head: true }),
+    supabase
+      .from("categories")
+      .select("id,name")
+      .eq("user_id", user.id)
+      .eq("is_active", true),
     supabase
       .from("subcategories")
-      .select("id", { count: "exact", head: true }),
+      .select("id,name")
+      .eq("user_id", user.id)
+      .eq("is_active", true),
     supabase
-      .from("recurring_items")
-      .select("id", { count: "exact", head: true }),
+      .from("accounts")
+      .select("id,name,sort_order")
+      .eq("user_id", user.id)
+      .eq("is_active", true)
+      .order("sort_order", { ascending: true }),
     supabase
       .from("quick_actions")
-      .select("id", { count: "exact", head: true }),
+      .select("id,label,category_id,subcategory_id,is_active,sort_order,type")
+      .eq("user_id", user.id)
+      .eq("is_active", true)
+      .eq("type", "expense")
+      .order("sort_order", { ascending: true }),
+    supabase
+      .from("transactions")
+      .select(
+        "id,amount,date,description,type,status,is_investment,is_travel_income,category_id,subcategory_id,created_at",
+      )
+      .eq("user_id", user.id)
+      .eq("month", selectedMonth)
+      .order("date", { ascending: false })
+      .order("created_at", { ascending: false }),
   ]);
+  const categories = categoriesData ?? [];
+  const subcategories = subcategoriesData ?? [];
+  const accounts = accountsData ?? [];
+  const quickActions = quickActionsData ?? [];
+  const transactionRows = transactionRowsData ?? [];
+
+  const categoriesById = new Map(categories.map((category) => [category.id, category]));
+  const subcategoriesById = new Map(
+    subcategories.map((subcategory) => [subcategory.id, subcategory]),
+  );
+  const defaultAccountId =
+    accounts.find((account) => account.name === "Cuenta normal")?.id ??
+    accounts[0]?.id ??
+    "";
+  const today = new Date().toISOString().slice(0, 10);
+
+  const summaryInput = transactionRows.map((transaction) => ({
+    amount: transaction.amount,
+    categoryId: transaction.category_id,
+    categoryName:
+      categoriesById.get(transaction.category_id ?? "")?.name ?? "Sin categoria",
+    is_investment: transaction.is_investment,
+    is_travel_income: transaction.is_travel_income,
+    subcategoryId: transaction.subcategory_id,
+    subcategoryName:
+      subcategoriesById.get(transaction.subcategory_id ?? "")?.name ??
+      "Sin subcategoria",
+    type: transaction.type,
+  }));
+  const summary = calculateMonthlySummary(summaryInput);
+  const latestTransactions: TransactionView[] = transactionRows
+    .slice(0, 5)
+    .map((transaction) => ({
+      amount: transaction.amount,
+      categoryName:
+        categoriesById.get(transaction.category_id ?? "")?.name ?? "Sin categoria",
+      date: transaction.date,
+      description: transaction.description,
+      id: transaction.id,
+      is_investment: transaction.is_investment,
+      is_travel_income: transaction.is_travel_income,
+      status: transaction.status,
+      subcategoryName:
+        subcategoriesById.get(transaction.subcategory_id ?? "")?.name ??
+        "Sin subcategoria",
+      type: transaction.type,
+    }));
+  const topExpenseCategories = summary.byCategory
+    .filter((category) => category.categoryName !== "Inversion")
+    .filter((category) => category.categoryName !== "Inversión")
+    .slice(0, 5);
+  const quickActionItems = quickActions.map((action) => ({
+    accountId: defaultAccountId,
+    categoryName:
+      categoriesById.get(action.category_id ?? "")?.name ?? "Sin categoria",
+    date: today,
+    id: action.id,
+    label: action.label,
+    subcategoryName:
+      subcategoriesById.get(action.subcategory_id ?? "")?.name ?? null,
+  }));
 
   return (
     <PageShell
-      description="Estado basico de autenticacion y datos iniciales del usuario."
+      description="Resumen mensual con movimientos reales y accesos rapidos para registrar gastos."
       title="Resumen mensual"
     >
-      <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        <StatCard label="Usuario" value={user.email ?? "Usuario"} />
-        <StatCard label="Mes actual" tone="accent" value={getMonthKey()} />
-        <StatCard label="Cuentas" tone="positive" value={readCount(accounts)} />
-        <StatCard label="Categorias" value={readCount(categories)} />
-        <StatCard label="Subcategorias" value={readCount(subcategories)} />
-        <StatCard label="Recurrentes" value={readCount(recurringItems)} />
-        <StatCard
-          label="Acciones rapidas"
-          tone="positive"
-          value={readCount(quickActions)}
-        />
-      </section>
+      <div className="space-y-6">
+        {params.created === "1" ? (
+          <section className="rounded-lg border border-teal-200 bg-teal-50 px-4 py-3 text-sm font-medium text-teal-800 shadow-sm">
+            Movimiento guardado correctamente.
+          </section>
+        ) : null}
 
-      <MonthlySnapshot />
+        <section className="rounded-lg border border-border-soft bg-surface p-4 shadow-sm">
+          <form className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-sm font-medium text-slate-500">Mes seleccionado</p>
+              <p className="mt-1 text-lg font-semibold text-slate-950">
+                {formatMonthLabel(monthDate)}
+              </p>
+            </div>
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <label className="block space-y-1.5">
+                <span className="text-sm font-medium text-slate-700">Mes</span>
+                <input
+                  className="h-11 rounded-md border border-border-soft bg-white px-3 text-sm outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20"
+                  defaultValue={selectedMonth}
+                  name="month"
+                  type="month"
+                />
+              </label>
+              <button
+                className="h-11 rounded-md bg-brand px-4 text-sm font-semibold text-white transition hover:bg-brand-strong"
+                type="submit"
+              >
+                Cambiar mes
+              </button>
+            </div>
+          </form>
+        </section>
+
+        <MonthlySnapshot
+          investment={summary.investment}
+          livingExpenses={summary.livingExpenses}
+          monthlySavings={summary.monthlySavings}
+          normalIncome={summary.normalIncome}
+          travelIncome={summary.travelIncome}
+          travelSavings={summary.travelSavings}
+        />
+
+        <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
+          <QuickActionsPanel actions={quickActionItems} />
+
+          <section className="rounded-lg border border-border-soft bg-surface p-4 shadow-sm">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-semibold text-slate-950">
+                  Top categorias
+                </h2>
+                <p className="mt-1 text-sm text-slate-500">
+                  Gasto ordinario del mes, sin contar inversion.
+                </p>
+              </div>
+            </div>
+
+            {topExpenseCategories.length === 0 ? (
+              <p className="text-sm text-slate-500">
+                Todavia no hay gasto ordinario en este mes.
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {topExpenseCategories.map((category, index) => (
+                  <div
+                    className="flex items-center justify-between gap-3 rounded-md bg-surface-muted px-3 py-3"
+                    key={`${category.categoryId ?? "null"}:${category.categoryName}`}
+                  >
+                    <div className="min-w-0">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                        #{index + 1}
+                      </p>
+                      <p className="truncate text-sm font-semibold text-slate-900">
+                        {category.categoryName}
+                      </p>
+                    </div>
+                    <p className="shrink-0 text-sm font-semibold text-slate-900">
+                      {formatMoney(category.amount)}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+        </div>
+
+        <section className="rounded-lg border border-border-soft bg-surface p-4 shadow-sm">
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <div>
+              <h2 className="text-lg font-semibold text-slate-950">
+                Ultimos movimientos
+              </h2>
+              <p className="mt-1 text-sm text-slate-500">
+                Los cinco movimientos mas recientes del mes seleccionado.
+              </p>
+            </div>
+            <Link
+              className="inline-flex items-center gap-2 text-sm font-semibold text-brand transition hover:text-brand-strong"
+              href={`/app/transactions?month=${selectedMonth}`}
+            >
+              Ver todos
+              <ArrowRight aria-hidden="true" size={16} />
+            </Link>
+          </div>
+
+          {latestTransactions.length === 0 ? (
+            <div className="rounded-md border border-dashed border-border-soft px-4 py-6 text-center">
+              <p className="text-sm font-medium text-slate-600">
+                Todavía no tienes movimientos este mes.
+              </p>
+              <p className="mt-2 text-sm text-slate-500">
+                Añade tu primer gasto.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {latestTransactions.map((transaction) => (
+                <article
+                  className="flex items-start justify-between gap-3 rounded-md border border-border-soft bg-white px-3 py-3"
+                  key={transaction.id}
+                >
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-slate-400">
+                      <CalendarDays aria-hidden="true" size={14} />
+                      {formatDisplayDate(transaction.date)}
+                    </div>
+                    <p className="mt-2 text-sm font-semibold text-slate-900">
+                      {getPrimaryLabel(transaction)}
+                    </p>
+                    <p className="mt-1 text-sm text-slate-500">
+                      {transaction.categoryName}
+                    </p>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {transaction.is_travel_income ? (
+                        <span className="rounded-full bg-sky-100 px-2.5 py-1 text-xs font-semibold text-sky-900">
+                          VIAJES
+                        </span>
+                      ) : null}
+                      {transaction.is_investment ? (
+                        <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-900">
+                          Inversion
+                        </span>
+                      ) : null}
+                      {transaction.status === "pending" ? (
+                        <span className="rounded-full bg-orange-100 px-2.5 py-1 text-xs font-semibold text-orange-900">
+                          Pendiente
+                        </span>
+                      ) : (
+                        <span className="rounded-full bg-teal-100 px-2.5 py-1 text-xs font-semibold text-teal-900">
+                          Confirmado
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="shrink-0 text-right">
+                    <p
+                      className={cn(
+                        "text-sm font-semibold",
+                        getAmountTone(transaction.type),
+                      )}
+                    >
+                      {getSignedAmountLabel(transaction.amount, transaction.type)}
+                    </p>
+                    <p className="mt-1 text-xs font-medium uppercase tracking-wide text-slate-400">
+                      {transaction.type === "expense"
+                        ? "Gasto"
+                        : transaction.type === "income"
+                          ? "Ingreso"
+                          : "Transferencia"}
+                    </p>
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
+        </section>
+
+        <section className="rounded-lg border border-border-soft bg-surface p-4 shadow-sm">
+          <div className="mb-4 flex items-center gap-2">
+            <ReceiptText aria-hidden="true" size={18} className="text-slate-400" />
+            <h2 className="text-lg font-semibold text-slate-950">
+              Lectura rapida del mes
+            </h2>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            <div className="rounded-md bg-surface-muted p-3">
+              <p className="text-sm font-medium text-slate-500">Balance ampliado</p>
+              <p className="mt-2 text-xl font-semibold text-slate-950">
+                {formatMoney(summary.expandedBalance)}
+              </p>
+            </div>
+            <div className="rounded-md bg-surface-muted p-3">
+              <p className="text-sm font-medium text-slate-500">Gasto total</p>
+              <p className="mt-2 text-xl font-semibold text-slate-950">
+                {formatMoney(summary.totalExpenses)}
+              </p>
+            </div>
+            <div className="rounded-md bg-surface-muted p-3">
+              <p className="text-sm font-medium text-slate-500">Movimientos del mes</p>
+              <p className="mt-2 text-xl font-semibold text-slate-950">
+                {transactionRows.length}
+              </p>
+            </div>
+          </div>
+        </section>
+      </div>
     </PageShell>
   );
 }

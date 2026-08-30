@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getMonthKey } from "@/lib/finance";
+import { throwIfSupabaseError } from "@/lib/supabase/errors";
 import type { Database, TablesInsert } from "@/types/database";
 
 type Supabase = SupabaseClient<Database>;
@@ -118,9 +119,7 @@ export async function userHasInitialData(
     .select("id", { count: "exact", head: true })
     .eq("user_id", userId);
 
-  if (error) {
-    throw new Error(error.message);
-  }
+  throwIfSupabaseError(error);
 
   return Number(count ?? 0) > 0;
 }
@@ -131,7 +130,7 @@ export async function initializeUserData(
 ) {
   const supabase = supabaseClient ?? (await createSupabaseServerClient());
 
-  await supabase.from("accounts").upsert(
+  const { error: accountsUpsertError } = await supabase.from("accounts").upsert(
     accounts.map<TablesInsert<"accounts">>((account) => ({
       current_balance: 0,
       initial_balance: 0,
@@ -144,7 +143,11 @@ export async function initializeUserData(
     { ignoreDuplicates: true, onConflict: "user_id,name" },
   );
 
-  await supabase.from("categories").upsert(
+  throwIfSupabaseError(accountsUpsertError);
+
+  const { error: categoriesUpsertError } = await supabase
+    .from("categories")
+    .upsert(
     categories.map<TablesInsert<"categories">>((category, index) => ({
       color: category.color,
       icon: category.icon,
@@ -158,6 +161,8 @@ export async function initializeUserData(
     { ignoreDuplicates: true, onConflict: "user_id,name" },
   );
 
+  throwIfSupabaseError(categoriesUpsertError);
+
   const { data: accountRows, error: accountsError } = await supabase
     .from("accounts")
     .select("id,name")
@@ -167,14 +172,16 @@ export async function initializeUserData(
     .select("id,name")
     .eq("user_id", userId);
 
-  if (accountsError) throw new Error(accountsError.message);
-  if (categoriesError) throw new Error(categoriesError.message);
+  throwIfSupabaseError(accountsError);
+  throwIfSupabaseError(categoriesError);
 
   const accountsByName = byName(accountRows);
   const categoriesByName = byName(categoryRows);
   const defaultAccount = accountsByName.get("Cuenta normal");
 
-  await supabase.from("subcategories").upsert(
+  const { error: subcategoriesUpsertError } = await supabase
+    .from("subcategories")
+    .upsert(
     subcategories
       .map<TablesInsert<"subcategories"> | null>(([categoryName, name], index) => {
         const category = categoriesByName.get(categoryName);
@@ -200,12 +207,14 @@ export async function initializeUserData(
     { ignoreDuplicates: true, onConflict: "user_id,category_id,name" },
   );
 
+  throwIfSupabaseError(subcategoriesUpsertError);
+
   const { data: subcategoryRows, error: subcategoriesError } = await supabase
     .from("subcategories")
     .select("id,name,category_id")
     .eq("user_id", userId);
 
-  if (subcategoriesError) throw new Error(subcategoriesError.message);
+  throwIfSupabaseError(subcategoriesError);
 
   const subcategoriesByCategoryAndName = new Map(
     (subcategoryRows ?? []).map((subcategory) => [
@@ -214,7 +223,9 @@ export async function initializeUserData(
     ]),
   );
 
-  await supabase.from("recurring_items").upsert(
+  const { error: recurringItemsUpsertError } = await supabase
+    .from("recurring_items")
+    .upsert(
     recurringItems
       .map<TablesInsert<"recurring_items"> | null>((item) => {
         const category = categoriesByName.get(item.category);
@@ -258,7 +269,11 @@ export async function initializeUserData(
     { ignoreDuplicates: true, onConflict: "user_id,name" },
   );
 
-  await supabase.from("quick_actions").upsert(
+  throwIfSupabaseError(recurringItemsUpsertError);
+
+  const { error: quickActionsUpsertError } = await supabase
+    .from("quick_actions")
+    .upsert(
     quickActions
       .map<TablesInsert<"quick_actions"> | null>((action, index) => {
         const category = categoriesByName.get(action.category);
@@ -294,7 +309,11 @@ export async function initializeUserData(
     { ignoreDuplicates: true, onConflict: "user_id,label" },
   );
 
-  await supabase.from("user_preferences").upsert(
+  throwIfSupabaseError(quickActionsUpsertError);
+
+  const { error: preferencesUpsertError } = await supabase
+    .from("user_preferences")
+    .upsert(
     {
       currency: "EUR",
       default_account_id: defaultAccount?.id ?? null,
@@ -304,4 +323,6 @@ export async function initializeUserData(
     },
     { ignoreDuplicates: true, onConflict: "user_id" },
   );
+
+  throwIfSupabaseError(preferencesUpsertError);
 }

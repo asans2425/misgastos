@@ -6,6 +6,8 @@ import {
   initializeUserData,
   userHasInitialData,
 } from "@/lib/auth/initialization";
+import { SupabaseSetupRequired } from "@/components/setup/SupabaseSetupRequired";
+import { isSupabaseSchemaMissingError } from "@/lib/supabase/errors";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
@@ -26,12 +28,20 @@ export default async function PrivateAppLayout({
     redirect("/login");
   }
 
-  await ensureUserProfile(supabase, user);
+  try {
+    await ensureUserProfile(supabase, user);
 
-  const hasInitialData = await userHasInitialData(user.id, supabase);
+    const hasInitialData = await userHasInitialData(user.id, supabase);
 
-  if (!hasInitialData) {
-    await initializeUserData(user.id, supabase);
+    if (!hasInitialData) {
+      await initializeUserData(user.id, supabase);
+    }
+  } catch (error) {
+    if (isSupabaseSchemaMissingError(error)) {
+      return <SupabaseSetupRequired />;
+    }
+
+    throw error;
   }
 
   return <AppShell userEmail={user.email ?? "Usuario"}>{children}</AppShell>;

@@ -138,7 +138,6 @@ create table public.transactions (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   unique (id, user_id),
-  unique (user_id, label),
   foreign key (category_id, user_id)
     references public.categories(id, user_id)
     on delete restrict,
@@ -181,6 +180,7 @@ create table public.quick_actions (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   unique (id, user_id),
+  unique (user_id, label),
   foreign key (category_id, user_id)
     references public.categories(id, user_id)
     on delete restrict,

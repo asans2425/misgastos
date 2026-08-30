@@ -6,6 +6,7 @@ import {
   initializeUserData,
   userHasInitialData,
 } from "@/lib/auth/initialization";
+import { isSupabaseSchemaMissingError } from "@/lib/supabase/errors";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export type AuthFormState = {
@@ -62,7 +63,18 @@ export async function authenticateWithPassword(
     }
 
     if (data.user && data.session) {
-      await prepareUserAfterLogin(data.user.id);
+      try {
+        await prepareUserAfterLogin(data.user.id);
+      } catch (error) {
+        if (isSupabaseSchemaMissingError(error)) {
+          return {
+            error:
+              "Login correcto, pero falta aplicar la migracion SQL de Supabase.",
+          };
+        }
+
+        throw error;
+      }
       redirect("/app");
     }
 
@@ -81,6 +93,18 @@ export async function authenticateWithPassword(
     return { error: error?.message ?? "No se ha podido iniciar sesion." };
   }
 
-  await prepareUserAfterLogin(data.user.id);
+  try {
+    await prepareUserAfterLogin(data.user.id);
+  } catch (error) {
+    if (isSupabaseSchemaMissingError(error)) {
+      return {
+        error:
+          "Login correcto, pero falta aplicar la migracion SQL de Supabase.",
+      };
+    }
+
+    throw error;
+  }
+
   redirect("/app");
 }
