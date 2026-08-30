@@ -3,7 +3,7 @@ import { EmptyTransactionsState } from "@/components/transactions/EmptyTransacti
 import { TransactionFilters } from "@/components/transactions/TransactionFilters";
 import { TransactionsList } from "@/components/transactions/TransactionsList";
 import { PageShell } from "@/components/ui/PageShell";
-import { getMonthKey } from "@/lib/finance";
+import { getFinancialMonthKey, getFinancialMonthRange } from "@/lib/finance";
 import { throwIfSupabaseError } from "@/lib/supabase/errors";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -39,7 +39,6 @@ export default async function TransactionsPage({
   searchParams,
 }: TransactionsPageProps) {
   const params = await searchParams;
-  const selectedMonth = params.month || getMonthKey();
   const selectedType = params.type || "";
   const selectedCategory = params.category || "";
   const selectedText = params.text?.trim() || "";
@@ -55,7 +54,7 @@ export default async function TransactionsPage({
   const [
     { data: categoryRows, error: categoryRowsError },
     { data: subcategoryRows, error: subcategoryRowsError },
-    { data: transactionRows, error: transactionRowsError },
+    { data: preferencesData, error: preferencesError },
   ] = await Promise.all([
       supabase
         .from("categories")
@@ -70,18 +69,37 @@ export default async function TransactionsPage({
         .eq("is_active", true)
         .order("sort_order", { ascending: true }),
       supabase
-        .from("transactions")
-        .select(
-          "id,amount,date,description,type,status,is_investment,is_reimbursement,is_travel_income,reimburses_transaction_id,category_id,subcategory_id,created_at",
-        )
+        .from("user_preferences")
+        .select("financial_month_start_day,financial_month_label_mode")
         .eq("user_id", user.id)
-        .eq("month", selectedMonth)
-        .order("date", { ascending: false })
-        .order("created_at", { ascending: false }),
+        .maybeSingle(),
     ]);
 
   throwIfSupabaseError(categoryRowsError);
   throwIfSupabaseError(subcategoryRowsError);
+  throwIfSupabaseError(preferencesError);
+
+  const financialMonthSettings = {
+    labelMode: preferencesData?.financial_month_label_mode ?? "same",
+    startDay: preferencesData?.financial_month_start_day ?? 1,
+  };
+  const selectedMonth =
+    params.month || getFinancialMonthKey(new Date(), financialMonthSettings);
+  const monthRange = getFinancialMonthRange(
+    selectedMonth,
+    financialMonthSettings,
+  );
+  const { data: transactionRows, error: transactionRowsError } = await supabase
+    .from("transactions")
+    .select(
+      "id,amount,date,description,type,status,is_investment,is_reimbursement,is_travel_income,reimburses_transaction_id,category_id,subcategory_id,created_at",
+    )
+    .eq("user_id", user.id)
+    .gte("date", monthRange.start)
+    .lte("date", monthRange.end)
+    .order("date", { ascending: false })
+    .order("created_at", { ascending: false });
+
   throwIfSupabaseError(transactionRowsError);
 
   const categories = (categoryRows ?? []).map((category) => ({
@@ -203,7 +221,9 @@ export default async function TransactionsPage({
           name: category.name,
         }))}
         selectedCategory={selectedCategory}
+        selectedEndDate={monthRange.end}
         selectedMonth={selectedMonth}
+        selectedStartDate={monthRange.start}
         selectedText={selectedText}
         selectedType={selectedType}
       />

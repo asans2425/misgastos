@@ -26,6 +26,16 @@ Un reembolso no es ingreso real. Es una entrada de dinero marcada con
 de la categoria/subcategoria del gasto asociado. Ejemplo: cena de 120 EUR con
 100 EUR devueltos por amigos = 20 EUR de gasto real en restauracion.
 
+Cada usuario puede configurar su mes financiero indicando el dia de cobro o
+inicio del ciclo. Por defecto coincide con el mes natural. Para evitar dudas, la
+app interpreta automaticamente el nombre del ciclo:
+
+- Dias 1-15: el ciclo pertenece a ese mismo mes.
+- Dias 16-31: el ciclo pertenece al mes siguiente.
+
+El dia elegido ya pertenece al nuevo ciclo; por ejemplo con dia 30, agosto va
+del 30 de julio al 29 de agosto y septiembre empieza el 30 de agosto.
+
 ## Formulas
 
 ```ts
@@ -61,6 +71,7 @@ Incluye:
 - Gestion de gastos e ingresos fijos en `/app/settings/recurring`.
 - Gestion de categorias y subcategorias en `/app/settings/categories`.
 - Gestion de huchas en `/app/settings/buckets`.
+- Configuracion del mes financiero en `/app/settings`.
 
 ## Supabase
 

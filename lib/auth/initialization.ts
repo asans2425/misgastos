@@ -324,6 +324,8 @@ export async function initializeUserData(
       currency: "EUR",
       default_account_id: defaultAccount?.id ?? null,
       default_month: getMonthKey(),
+      financial_month_label_mode: "same",
+      financial_month_start_day: 1,
       hide_investment_from_living_expenses: true,
       user_id: userId,
     },

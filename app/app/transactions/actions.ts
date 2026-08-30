@@ -1,7 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { getMonthKey, parseMoneyInput } from "@/lib/finance";
+import { getFinancialMonthKey, parseMoneyInput } from "@/lib/finance";
 import {
   isInvestmentCategoryOrSubcategory,
   isTravelIncomeSubcategory,
@@ -12,6 +12,22 @@ import type { TransactionStatus } from "@/types/database";
 export type UpdateTransactionState = {
   error?: string;
 };
+
+async function getFinancialMonthSettings(
+  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
+  userId: string,
+) {
+  const { data } = await supabase
+    .from("user_preferences")
+    .select("financial_month_start_day,financial_month_label_mode")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  return {
+    labelMode: data?.financial_month_label_mode ?? "same",
+    startDay: data?.financial_month_start_day ?? 1,
+  };
+}
 
 function withOutcome(returnTo: string, outcome: "deleted" | "updated") {
   const [pathname, query = ""] = returnTo.split("?");
@@ -201,7 +217,10 @@ export async function updateTransaction(
       is_investment: isInvestment,
       is_reimbursement: isReimbursement,
       is_travel_income: isTravelIncome,
-      month: getMonthKey(date),
+      month: getFinancialMonthKey(
+        date,
+        await getFinancialMonthSettings(supabase, user.id),
+      ),
       reimburses_transaction_id: nextReimbursesTransactionId,
       status,
       subcategory_id: nextSubcategoryId,

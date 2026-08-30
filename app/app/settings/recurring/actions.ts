@@ -2,7 +2,11 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { getMonthKey, parseMoneyInput } from "@/lib/finance";
+import {
+  getDateForFinancialMonthDay,
+  getMonthKey,
+  parseMoneyInput,
+} from "@/lib/finance";
 import {
   isInvestmentCategoryOrSubcategory,
 } from "@/lib/finance/transactionRules";
@@ -17,16 +21,24 @@ function redirectWithStatus(status: string): never {
   redirect(`/app/settings/recurring?status=${status}`);
 }
 
-function clampDayToMonth(month: string, dayOfMonth: number) {
-  const [year, monthNumber] = month.split("-").map(Number);
-  const lastDay = new Date(year, monthNumber, 0).getDate();
-  const day = Math.min(Math.max(dayOfMonth, 1), lastDay);
-
-  return `${month}-${String(day).padStart(2, "0")}`;
-}
-
 function isChecked(formData: FormData, name: string) {
   return formData.getAll(name).includes("on");
+}
+
+async function getFinancialMonthSettings(
+  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
+  userId: string,
+) {
+  const { data } = await supabase
+    .from("user_preferences")
+    .select("financial_month_start_day,financial_month_label_mode")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  return {
+    labelMode: data?.financial_month_label_mode ?? "same",
+    startDay: data?.financial_month_start_day ?? 1,
+  };
 }
 
 async function getCurrentUser() {
@@ -211,11 +223,19 @@ export async function generateRecurringTransactions(formData: FormData) {
   const existingRecurringIds = new Set(
     (existingTransactions ?? []).map((transaction) => transaction.recurring_item_id),
   );
+  const financialMonthSettings = await getFinancialMonthSettings(
+    supabase,
+    userId,
+  );
   const rows = (recurringItems ?? [])
     .filter((item) => item.amount > 0)
     .filter((item) => !existingRecurringIds.has(item.id))
     .map<TablesInsert<"transactions">>((item) => {
-      const date = clampDayToMonth(month, item.day_of_month);
+      const date = getDateForFinancialMonthDay(
+        month,
+        item.day_of_month,
+        financialMonthSettings,
+      );
 
       return {
         account_id: item.account_id,

@@ -1,7 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { getMonthKey, parseMoneyInput } from "@/lib/finance";
+import { getFinancialMonthKey, parseMoneyInput } from "@/lib/finance";
 import {
   isInvestmentCategoryOrSubcategory,
 } from "@/lib/finance/transactionRules";
@@ -11,6 +11,22 @@ import type { TransactionInsert } from "@/types/finance";
 export type CreateTransactionState = {
   error?: string;
 };
+
+async function getFinancialMonthSettings(
+  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
+  userId: string,
+) {
+  const { data } = await supabase
+    .from("user_preferences")
+    .select("financial_month_start_day,financial_month_label_mode")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  return {
+    labelMode: data?.financial_month_label_mode ?? "same",
+    startDay: data?.financial_month_start_day ?? 1,
+  };
+}
 
 export async function createTransaction(
   _previousState: CreateTransactionState,
@@ -83,6 +99,11 @@ export async function createTransaction(
   }
 
   let payload: TransactionInsert;
+  const financialMonthSettings = await getFinancialMonthSettings(
+    supabase,
+    user.id,
+  );
+  const transactionMonth = getFinancialMonthKey(date, financialMonthSettings);
 
   if (type === "expense") {
     const { data: category, error: categoryError } = await supabase
@@ -135,7 +156,7 @@ export async function createTransaction(
       is_recurring: false,
       is_travel_income: false,
       merchant: null,
-      month: getMonthKey(date),
+      month: transactionMonth,
       status: "confirmed",
       subcategory_id: validatedSubcategoryId,
       type: "expense",
@@ -169,7 +190,7 @@ export async function createTransaction(
       is_recurring: false,
       is_travel_income: false,
       merchant: null,
-      month: getMonthKey(date),
+      month: transactionMonth,
       reimburses_transaction_id: reimbursedExpense.id,
       status: "confirmed",
       subcategory_id: null,
@@ -213,7 +234,7 @@ export async function createTransaction(
       is_recurring: false,
       is_travel_income: false,
       merchant: null,
-      month: getMonthKey(date),
+      month: transactionMonth,
       reimburses_transaction_id: null,
       status: "confirmed",
       subcategory_id: subcategory.id,

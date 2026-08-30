@@ -107,6 +107,11 @@ cuentan como ingreso real del mes: reducen el gasto neto de esa categoria para
 que casos como cenas, padel o compras pagadas por una persona no deformen las
 estadisticas.
 
+En `/app/settings` se puede configurar el mes financiero con el dia de cobro o
+inicio del ciclo. Dias 1-15 cuentan como ese mismo mes y dias 16-31 como el mes
+siguiente. El dia elegido pertenece al nuevo ciclo; con dia 30, agosto cubre del
+30 de julio al 29 de agosto y septiembre empieza el 30 de agosto.
+
 ## Rutas
 
 - `/login`

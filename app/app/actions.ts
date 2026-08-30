@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { getMonthKey, parseMoneyInput } from "@/lib/finance";
+import { getFinancialMonthKey, parseMoneyInput } from "@/lib/finance";
 import { isInvestmentCategoryOrSubcategory } from "@/lib/finance/transactionRules";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -18,6 +18,22 @@ export type QuickExpenseState = {
   success?: boolean;
   successMessage?: string;
 };
+
+async function getFinancialMonthSettings(
+  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
+  userId: string,
+) {
+  const { data } = await supabase
+    .from("user_preferences")
+    .select("financial_month_start_day,financial_month_label_mode")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  return {
+    labelMode: data?.financial_month_label_mode ?? "same",
+    startDay: data?.financial_month_start_day ?? 1,
+  };
+}
 
 export async function createQuickExpense(
   _previousState: QuickExpenseState,
@@ -123,6 +139,10 @@ export async function createQuickExpense(
     category.name,
     subcategoryName,
   );
+  const financialMonthSettings = await getFinancialMonthSettings(
+    supabase,
+    user.id,
+  );
   const { error } = await supabase.from("transactions").insert({
     account_id: account.id,
     amount,
@@ -136,7 +156,7 @@ export async function createQuickExpense(
     is_recurring: false,
     is_travel_income: false,
     merchant: null,
-    month: getMonthKey(date),
+    month: getFinancialMonthKey(date, financialMonthSettings),
     status: "confirmed",
     subcategory_id: subcategoryId,
     type: "expense",

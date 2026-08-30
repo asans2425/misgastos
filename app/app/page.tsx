@@ -6,9 +6,10 @@ import { QuickActionsPanel } from "@/components/dashboard/QuickActionsPanel";
 import { PageShell } from "@/components/ui/PageShell";
 import {
   calculateMonthlySummary,
+  getFinancialMonthKey,
+  getFinancialMonthRange,
   formatMoney,
   formatMonthLabel,
-  getMonthKey,
 } from "@/lib/finance";
 import { throwIfSupabaseError } from "@/lib/supabase/errors";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -43,6 +44,13 @@ function formatDisplayDate(value: string) {
     day: "numeric",
     month: "short",
   }).format(date);
+}
+
+function formatRangeDate(value: string) {
+  return new Intl.DateTimeFormat("es-ES", {
+    day: "numeric",
+    month: "short",
+  }).format(new Date(`${value}T00:00:00`));
 }
 
 function getSignedAmountLabel(
@@ -95,15 +103,13 @@ export default async function AppHomePage({ searchParams }: AppHomePageProps) {
     redirect("/login");
   }
 
-  const selectedMonth = params.month || getMonthKey();
-  const monthDate = new Date(`${selectedMonth}-01T00:00:00`);
   const [
     { data: categoriesData, error: categoriesError },
     { data: subcategoriesData, error: subcategoriesError },
     { data: accountsData, error: accountsError },
     { data: quickActionsData, error: quickActionsError },
-    { data: transactionRowsData, error: transactionRowsError },
     { data: bucketRowsData, error: bucketRowsError },
+    { data: preferencesData, error: preferencesError },
   ] = await Promise.all([
     supabase
       .from("categories")
@@ -130,28 +136,48 @@ export default async function AppHomePage({ searchParams }: AppHomePageProps) {
       .eq("type", "expense")
       .order("sort_order", { ascending: true }),
     supabase
-      .from("transactions")
-      .select(
-        "id,amount,date,description,type,status,is_investment,is_reimbursement,is_travel_income,reimburses_transaction_id,category_id,subcategory_id,created_at",
-      )
-      .eq("user_id", user.id)
-      .eq("month", selectedMonth)
-      .order("date", { ascending: false })
-      .order("created_at", { ascending: false }),
-    supabase
       .from("savings_buckets")
       .select("id,name,current_balance,target_amount,initial_balance,color,is_active,sort_order")
       .eq("user_id", user.id)
       .eq("is_active", true)
       .order("sort_order", { ascending: true }),
+    supabase
+      .from("user_preferences")
+      .select("financial_month_start_day,financial_month_label_mode")
+      .eq("user_id", user.id)
+      .maybeSingle(),
   ]);
 
   throwIfSupabaseError(categoriesError);
   throwIfSupabaseError(subcategoriesError);
   throwIfSupabaseError(accountsError);
   throwIfSupabaseError(quickActionsError);
-  throwIfSupabaseError(transactionRowsError);
   throwIfSupabaseError(bucketRowsError);
+  throwIfSupabaseError(preferencesError);
+
+  const financialMonthSettings = {
+    labelMode: preferencesData?.financial_month_label_mode ?? "same",
+    startDay: preferencesData?.financial_month_start_day ?? 1,
+  };
+  const selectedMonth =
+    params.month || getFinancialMonthKey(new Date(), financialMonthSettings);
+  const monthDate = new Date(`${selectedMonth}-01T00:00:00`);
+  const monthRange = getFinancialMonthRange(
+    selectedMonth,
+    financialMonthSettings,
+  );
+  const { data: transactionRowsData, error: transactionRowsError } = await supabase
+    .from("transactions")
+    .select(
+      "id,amount,date,description,type,status,is_investment,is_reimbursement,is_travel_income,reimburses_transaction_id,category_id,subcategory_id,created_at",
+    )
+    .eq("user_id", user.id)
+    .gte("date", monthRange.start)
+    .lte("date", monthRange.end)
+    .order("date", { ascending: false })
+    .order("created_at", { ascending: false });
+
+  throwIfSupabaseError(transactionRowsError);
 
   const categories = categoriesData ?? [];
   const subcategories = subcategoriesData ?? [];
@@ -239,6 +265,10 @@ export default async function AppHomePage({ searchParams }: AppHomePageProps) {
               <p className="text-sm font-medium text-slate-500">Mes seleccionado</p>
               <p className="mt-1 text-lg font-semibold text-slate-950">
                 {formatMonthLabel(monthDate)}
+              </p>
+              <p className="mt-1 text-sm text-slate-500">
+                {formatRangeDate(monthRange.start)} -{" "}
+                {formatRangeDate(monthRange.end)}
               </p>
             </div>
             <div className="flex flex-col gap-3 sm:flex-row">

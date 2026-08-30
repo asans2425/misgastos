@@ -208,6 +208,8 @@ create table public.user_preferences (
   user_id uuid not null references auth.users(id) on delete cascade,
   default_account_id uuid,
   default_month text,
+  financial_month_start_day integer not null default 1,
+  financial_month_label_mode text not null default 'same',
   hide_investment_from_living_expenses boolean not null default true,
   currency text not null default 'EUR',
   created_at timestamptz not null default now(),
@@ -219,6 +221,10 @@ create table public.user_preferences (
     on delete restrict,
   constraint user_preferences_default_month_check
     check (default_month is null or default_month ~ '^[0-9]{4}-[0-9]{2}$'),
+  constraint user_preferences_financial_month_start_day_check
+    check (financial_month_start_day between 1 and 31),
+  constraint user_preferences_financial_month_label_mode_check
+    check (financial_month_label_mode in ('same', 'next')),
   constraint user_preferences_currency_check
     check (length(trim(currency)) = 3)
 );

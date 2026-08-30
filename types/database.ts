@@ -10,6 +10,7 @@ export type AccountType = "cash" | "normal" | "other" | "savings" | "travel";
 export type CategoryType = "expense" | "income" | "special";
 export type DestinationType = "ahorros" | "normal" | "viajes";
 export type BucketMovementType = "contribution" | "withdrawal";
+export type FinancialMonthLabelMode = "next" | "same";
 export type RecurringItemType = "expense" | "income";
 export type QuickActionType = "expense" | "income";
 export type TransactionStatus = "confirmed" | "edited" | "pending";
@@ -439,6 +440,8 @@ type PublicTables = {
       currency: string;
       default_account_id: string | null;
       default_month: string | null;
+      financial_month_label_mode: FinancialMonthLabelMode;
+      financial_month_start_day: number;
       hide_investment_from_living_expenses: boolean;
       id: string;
       updated_at: string;
@@ -449,6 +452,8 @@ type PublicTables = {
       currency?: string;
       default_account_id?: string | null;
       default_month?: string | null;
+      financial_month_label_mode?: FinancialMonthLabelMode;
+      financial_month_start_day?: number;
       hide_investment_from_living_expenses?: boolean;
       id?: string;
       updated_at?: string;
@@ -459,6 +464,8 @@ type PublicTables = {
       currency?: string;
       default_account_id?: string | null;
       default_month?: string | null;
+      financial_month_label_mode?: FinancialMonthLabelMode;
+      financial_month_start_day?: number;
       hide_investment_from_living_expenses?: boolean;
       id?: string;
       updated_at?: string;
