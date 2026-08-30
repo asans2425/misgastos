@@ -1,15 +1,21 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getMonthKey } from "@/lib/finance";
-import { throwIfSupabaseError } from "@/lib/supabase/errors";
+import {
+  isSupabaseSchemaMissingError,
+  throwIfSupabaseError,
+} from "@/lib/supabase/errors";
 import type { Database, TablesInsert } from "@/types/database";
 
 type Supabase = SupabaseClient<Database>;
 
 const accounts = [
   { name: "Cuenta normal", sort_order: 1, type: "normal" },
-  { name: "AHORROS", sort_order: 2, type: "savings" },
-  { name: "VIAJES", sort_order: 3, type: "travel" },
+] as const;
+
+const savingsBuckets = [
+  { color: "#14b8a6", icon: "piggy-bank", name: "AHORROS", sort_order: 1 },
+  { color: "#0ea5e9", icon: "plane", name: "VIAJES", sort_order: 2 },
 ] as const;
 
 const categories = [
@@ -245,7 +251,7 @@ export async function initializeUserData(
         return {
           account_id: defaultAccount?.id ?? null,
           amount: item.amount,
-          auto_create: false,
+          auto_create: true,
           category_id: category.id,
           day_of_month: 1,
           frequency: "monthly",
@@ -325,4 +331,35 @@ export async function initializeUserData(
   );
 
   throwIfSupabaseError(preferencesUpsertError);
+
+  try {
+    await ensureDefaultSavingsBuckets(userId, supabase);
+  } catch (error) {
+    if (!isSupabaseSchemaMissingError(error)) {
+      throw error;
+    }
+  }
+}
+
+export async function ensureDefaultSavingsBuckets(
+  userId: string,
+  supabaseClient?: Supabase,
+) {
+  const supabase = supabaseClient ?? (await createSupabaseServerClient());
+  const { error } = await supabase.from("savings_buckets").upsert(
+    savingsBuckets.map<TablesInsert<"savings_buckets">>((bucket) => ({
+      color: bucket.color,
+      current_balance: 0,
+      icon: bucket.icon,
+      initial_balance: 0,
+      is_active: true,
+      name: bucket.name,
+      sort_order: bucket.sort_order,
+      target_amount: null,
+      user_id: userId,
+    })),
+    { ignoreDuplicates: true, onConflict: "user_id,name" },
+  );
+
+  throwIfSupabaseError(error);
 }

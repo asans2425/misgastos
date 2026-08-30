@@ -13,8 +13,11 @@ export type MonthlySummaryInput = {
   amount: number;
   categoryId: string | null;
   categoryName: string;
+  id?: string;
   is_investment: boolean;
+  is_reimbursement?: boolean;
   is_travel_income: boolean;
+  reimburses_transaction_id?: string | null;
   subcategoryId: string | null;
   subcategoryName: string;
   type: TransactionType;
@@ -47,7 +50,6 @@ export type MonthlySummary = {
 };
 
 export type AddTransactionMode = "expense" | "income";
-export type IncomeDestinationMode = "normal" | "travel";
 
 export type TransactionDraft = {
   accountId: string;
@@ -55,9 +57,10 @@ export type TransactionDraft = {
   categoryId?: string | null;
   date: string;
   description?: string;
-  incomeDestination?: IncomeDestinationMode;
   isInvestment?: boolean;
+  isReimbursement?: boolean;
   isTravelIncome?: boolean;
+  reimbursesTransactionId?: string | null;
   subcategoryId?: string | null;
   type: AddTransactionMode;
 };

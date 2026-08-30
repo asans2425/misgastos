@@ -4,6 +4,7 @@ import { TransactionFilters } from "@/components/transactions/TransactionFilters
 import { TransactionsList } from "@/components/transactions/TransactionsList";
 import { PageShell } from "@/components/ui/PageShell";
 import { getMonthKey } from "@/lib/finance";
+import { throwIfSupabaseError } from "@/lib/supabase/errors";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 type TransactionsPageProps = {
@@ -25,7 +26,9 @@ type TransactionRow = {
   description: string | null;
   id: string;
   isInvestment: boolean;
+  isReimbursement: boolean;
   isTravelIncome: boolean;
+  reimbursesTransactionId: string | null;
   status: "confirmed" | "edited" | "pending";
   subcategoryId: string | null;
   subcategoryName: string;
@@ -49,8 +52,11 @@ export default async function TransactionsPage({
     redirect("/login");
   }
 
-  const [{ data: categoryRows }, { data: subcategoryRows }, { data: transactionRows }] =
-    await Promise.all([
+  const [
+    { data: categoryRows, error: categoryRowsError },
+    { data: subcategoryRows, error: subcategoryRowsError },
+    { data: transactionRows, error: transactionRowsError },
+  ] = await Promise.all([
       supabase
         .from("categories")
         .select("id,name,type,sort_order")
@@ -66,13 +72,17 @@ export default async function TransactionsPage({
       supabase
         .from("transactions")
         .select(
-          "id,amount,date,description,type,status,is_investment,is_travel_income,category_id,subcategory_id,created_at",
+          "id,amount,date,description,type,status,is_investment,is_reimbursement,is_travel_income,reimburses_transaction_id,category_id,subcategory_id,created_at",
         )
         .eq("user_id", user.id)
         .eq("month", selectedMonth)
         .order("date", { ascending: false })
         .order("created_at", { ascending: false }),
     ]);
+
+  throwIfSupabaseError(categoryRowsError);
+  throwIfSupabaseError(subcategoryRowsError);
+  throwIfSupabaseError(transactionRowsError);
 
   const categories = (categoryRows ?? []).map((category) => ({
     id: category.id,
@@ -107,7 +117,9 @@ export default async function TransactionsPage({
         description: transaction.description,
         id: transaction.id,
         isInvestment: transaction.is_investment,
+        isReimbursement: transaction.is_reimbursement,
         isTravelIncome: transaction.is_travel_income,
+        reimbursesTransactionId: transaction.reimburses_transaction_id,
         status: transaction.status,
         subcategoryId: transaction.subcategory_id,
         subcategoryName: subcategory?.name ?? "Sin subcategoria",
@@ -154,6 +166,19 @@ export default async function TransactionsPage({
   if (selectedText) returnToParams.set("text", selectedText);
 
   const returnTo = `/app/transactions?${returnToParams.toString()}`;
+  const reimbursementTargets = filteredTransactions
+    .filter((transaction) => transaction.type === "expense")
+    .map((transaction) => ({
+      id: transaction.id,
+      label: `${transaction.date} · ${
+        transaction.description?.trim() ||
+        transaction.subcategoryName ||
+        transaction.categoryName
+      } · ${transaction.amount.toLocaleString("es-ES", {
+        currency: "EUR",
+        style: "currency",
+      })}`,
+    }));
 
   return (
     <PageShell
@@ -192,6 +217,7 @@ export default async function TransactionsPage({
         <TransactionsList
           categories={categories}
           groups={groups}
+          reimbursementTargets={reimbursementTargets}
           returnTo={returnTo}
           subcategories={subcategories}
         />

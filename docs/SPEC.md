@@ -7,30 +7,42 @@ ingresos con rapidez desde el movil y revisar el estado del mes.
 
 ## Concepto financiero
 
-La app trabaja con tres espacios:
+La app trabaja con una cuenta operativa principal y huchas:
 
-- Cuenta normal: dinero del dia a dia.
-- AHORROS: ahorro calculado del mes.
-- VIAJES: ingresos de clases/webs destinados a viajes.
+- Cuenta normal: cuenta principal donde entran ingresos y salen gastos reales.
+- Huchas: compartimentos internos para apartar dinero por objetivos, como
+  AHORROS, VIAJES, COCHE o cualquier objetivo que cree cada usuario.
 
-La inversion no es una cuenta. Es un gasto recurrente editable, normalmente de
-210 EUR al mes, marcado con `is_investment = true`.
+Mover dinero a una hucha no es un gasto y no afecta a estadisticas de gastos.
+Retirar dinero de una hucha tampoco es un ingreso. Las huchas tienen sus propios
+movimientos internos.
+
+La inversion no es una cuenta ni una hucha obligatoria. Es un gasto recurrente
+editable, normalmente de 210 EUR al mes, marcado con `is_investment = true`.
+
+Un reembolso no es ingreso real. Es una entrada de dinero marcada con
+`is_reimbursement = true` y enlazada al gasto original mediante
+`reimburses_transaction_id`. En estadisticas, el reembolso reduce el gasto neto
+de la categoria/subcategoria del gasto asociado. Ejemplo: cena de 120 EUR con
+100 EUR devueltos por amigos = 20 EUR de gasto real en restauracion.
 
 ## Formulas
 
 ```ts
-normalIncome = income donde is_travel_income = false
-travelIncome = income donde is_travel_income = true
-investment = expense donde is_investment = true
-livingExpenses = expense donde is_investment = false
+normalIncome = income donde is_reimbursement = false
+travelIncome = 0 en el modelo nuevo; se mantiene el campo por compatibilidad
+investment = expense donde is_investment = true - reembolsos asociados
+livingExpenses = expense donde is_investment = false - reembolsos asociados
 monthlySavings = normalIncome - livingExpenses - investment
-travelSavings = travelIncome
+travelSavings = saldo de huchas de viajes si se quiere mostrar ese objetivo
 totalExpenses = livingExpenses + investment
-expandedBalance = normalIncome + travelIncome - totalExpenses
+expandedBalance = normalIncome - totalExpenses
 ```
 
-Los importes se guardan siempre positivos. El campo `type` indica si es
-`income`, `expense` o `transfer`.
+Los importes se guardan siempre positivos. En la experiencia principal se
+trabaja con ingresos y gastos. Si alguien tiene una transferencia mensual fija,
+se modela como un gasto fijo con la categoria/subcategoria que tenga sentido
+para esa persona.
 
 ## Fase actual
 
@@ -38,13 +50,17 @@ Incluye:
 
 - Proyecto Next.js con App Router.
 - TypeScript y Tailwind CSS.
-- Supabase Auth con email/password.
+- Supabase Auth con email/password y soporte de Google OAuth.
 - Proteccion de rutas bajo `/app`.
 - Logout.
 - Creacion de `profile` si no existe.
 - Migracion SQL inicial con RLS.
 - Inicializacion idempotente de datos del usuario.
-- Pantalla `/app` con usuario, mes actual y contadores de datos.
+- Dashboard `/app` con resumen mensual real, acciones rapidas, ultimos
+  movimientos, top de categorias y resumen de huchas.
+- Gestion de gastos e ingresos fijos en `/app/settings/recurring`.
+- Gestion de categorias y subcategorias en `/app/settings/categories`.
+- Gestion de huchas en `/app/settings/buckets`.
 
 ## Supabase
 
@@ -67,6 +83,8 @@ No usar `service_role` ni `sb_secret_*` en codigo de frontend.
 - `transactions`
 - `quick_actions`
 - `user_preferences`
+- `savings_buckets`
+- `bucket_movements`
 
 Todas las tablas tienen RLS. `profiles` usa `id = auth.uid()` y el resto usa
 `user_id = auth.uid()`.
@@ -76,6 +94,9 @@ Todas las tablas tienen RLS. `profiles` usa `id = auth.uid()` y el resto usa
 Cuentas:
 
 - Cuenta normal
+
+Huchas iniciales:
+
 - AHORROS
 - VIAJES
 
@@ -85,15 +106,17 @@ Debe evitar duplicados.
 ## Rutas
 
 - `/login`: login y registro.
-- `/app`: resumen y verificacion de datos iniciales.
-- `/app/transactions`: listado placeholder de movimientos.
-- `/app/add`: formulario visual inicial.
+- `/app`: dashboard mensual con datos reales.
+- `/app/transactions`: listado, filtros, edicion y borrado de movimientos.
+- `/app/add`: creacion de gastos, ingresos y reembolsos asociados a gastos.
 - `/app/analysis`: grafica placeholder.
-- `/app/settings`: estado tecnico y futuros ajustes.
+- `/app/settings`: acceso a configuracion.
+- `/app/settings/recurring`: gastos e ingresos fijos.
+- `/app/settings/categories`: categorias y subcategorias.
+- `/app/settings/buckets`: huchas y aportaciones internas.
 
 ## Siguiente fase sugerida
 
-- Aplicar migraciones al proyecto Supabase remoto.
-- Conectar formulario de movimientos.
-- Crear CRUD de recurrentes y acciones rapidas.
-- Crear vistas reales de resumen y analisis mensual.
+- Aplicar migraciones pendientes al proyecto Supabase remoto.
+- Mejorar acciones rapidas para que sean editables desde ajustes.
+- Crear vistas reales de analisis mensual con graficos.

@@ -28,6 +28,7 @@ export function isSupabaseSchemaMissingError(error: unknown) {
   const message = maybeError.message?.toLowerCase() ?? "";
 
   return (
+    maybeError.code === "PGRST204" ||
     maybeError.code === "PGRST205" ||
     maybeError.code === "42P01" ||
     missingSchemaSignals.some((signal) => message.includes(signal))

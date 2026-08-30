@@ -3,7 +3,7 @@
 import { useActionState, useMemo, useState } from "react";
 import { ArrowRight, CheckCircle2, Loader2 } from "lucide-react";
 import { createTransaction, type CreateTransactionState } from "@/app/app/add/actions";
-import type { AddTransactionMode, IncomeDestinationMode } from "@/types/finance";
+import type { AddTransactionMode } from "@/types/finance";
 
 type AccountOption = {
   id: string;
@@ -24,11 +24,17 @@ type SubcategoryOption = {
   name: string;
 };
 
+type ReimbursementTargetOption = {
+  id: string;
+  label: string;
+};
+
 type TransactionDraftFormProps = Readonly<{
   accounts: AccountOption[];
   categories: CategoryOption[];
   defaultAccountId: string;
   defaultDate: string;
+  reimbursementTargets: ReimbursementTargetOption[];
   subcategories: SubcategoryOption[];
 }>;
 
@@ -39,6 +45,7 @@ export function TransactionDraftForm({
   categories,
   defaultAccountId,
   defaultDate,
+  reimbursementTargets,
   subcategories,
 }: TransactionDraftFormProps) {
   const [state, formAction, pending] = useActionState(
@@ -47,8 +54,7 @@ export function TransactionDraftForm({
   );
   const [type, setType] = useState<AddTransactionMode>("expense");
   const [categoryId, setCategoryId] = useState("");
-  const [incomeDestination, setIncomeDestination] =
-    useState<IncomeDestinationMode>("normal");
+  const [isReimbursement, setIsReimbursement] = useState(false);
   const [subcategoryId, setSubcategoryId] = useState("");
 
   const expenseCategories = useMemo(
@@ -63,13 +69,18 @@ export function TransactionDraftForm({
     [categoryId, subcategories],
   );
   const incomeSubcategories = useMemo(
-    () =>
-      subcategories.filter((subcategory) =>
-        incomeDestination === "travel"
-          ? subcategory.isTravelIncome
-          : !subcategory.isTravelIncome,
-      ),
-    [incomeDestination, subcategories],
+    () => {
+      const incomeCategoryIds = new Set(
+        categories
+          .filter((category) => category.type === "income")
+          .map((category) => category.id),
+      );
+
+      return subcategories.filter((subcategory) =>
+        incomeCategoryIds.has(subcategory.categoryId),
+      );
+    },
+    [categories, subcategories],
   );
 
   return (
@@ -86,6 +97,7 @@ export function TransactionDraftForm({
           }`}
           onClick={() => {
             setType("expense");
+            setIsReimbursement(false);
             setSubcategoryId("");
           }}
           type="button"
@@ -137,7 +149,9 @@ export function TransactionDraftForm({
       </div>
 
       <label className="block space-y-1.5">
-        <span className="text-sm font-medium text-slate-700">Cuenta</span>
+        <span className="text-sm font-medium text-slate-700">
+          Cuenta principal
+        </span>
         <select
           className="h-12 w-full rounded-md border border-border-soft bg-white px-3 text-base outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20"
           defaultValue={defaultAccountId}
@@ -202,48 +216,67 @@ export function TransactionDraftForm({
           </label>
         </>
       ) : (
-        <>
-          <label className="block space-y-1.5">
+        <label className="block space-y-1.5">
+          <span className="text-sm font-medium text-slate-700">
+            Fuente / subcategoria
+          </span>
+          <select
+            className="h-12 w-full rounded-md border border-border-soft bg-white px-3 text-base outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20"
+            name="subcategoryId"
+            onChange={(event) => setSubcategoryId(event.target.value)}
+            required={!isReimbursement}
+            value={subcategoryId}
+          >
+            <option value="">Selecciona una fuente</option>
+            {incomeSubcategories.map((subcategory) => (
+              <option key={subcategory.id} value={subcategory.id}>
+                {subcategory.name}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
+
+      {type === "income" ? (
+        <div className="space-y-3 rounded-md border border-border-soft bg-surface-muted px-3 py-3">
+          <label className="flex items-center gap-3">
+            <input
+              className="size-4"
+              checked={isReimbursement}
+              name="isReimbursement"
+              onChange={(event) => setIsReimbursement(event.target.checked)}
+              type="checkbox"
+              value="on"
+            />
             <span className="text-sm font-medium text-slate-700">
-              Tipo de ingreso
+              Es un reembolso de un gasto que pague yo
             </span>
-            <select
-              className="h-12 w-full rounded-md border border-border-soft bg-white px-3 text-base outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20"
-              name="incomeDestination"
-              onChange={(event) => {
-                setIncomeDestination(
-                  event.target.value as IncomeDestinationMode,
-                );
-                setSubcategoryId("");
-              }}
-              value={incomeDestination}
-            >
-              <option value="normal">Ingreso normal</option>
-              <option value="travel">Ingreso VIAJES</option>
-            </select>
           </label>
 
-          <label className="block space-y-1.5">
-            <span className="text-sm font-medium text-slate-700">
-              Fuente / subcategoria
-            </span>
-            <select
-              className="h-12 w-full rounded-md border border-border-soft bg-white px-3 text-base outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20"
-              name="subcategoryId"
-              onChange={(event) => setSubcategoryId(event.target.value)}
-              required
-              value={subcategoryId}
-            >
-              <option value="">Selecciona una fuente</option>
-              {incomeSubcategories.map((subcategory) => (
-                <option key={subcategory.id} value={subcategory.id}>
-                  {subcategory.name}
-                </option>
-              ))}
-            </select>
-          </label>
-        </>
-      )}
+          {isReimbursement ? (
+            <label className="block space-y-1.5">
+              <span className="text-sm font-medium text-slate-700">
+                Gasto asociado
+              </span>
+              <select
+                className="h-12 w-full rounded-md border border-border-soft bg-white px-3 text-base outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20"
+                name="reimbursesTransactionId"
+                required={isReimbursement}
+              >
+                <option value="">Selecciona el gasto original</option>
+                {reimbursementTargets.map((target) => (
+                  <option key={target.id} value={target.id}>
+                    {target.label}
+                  </option>
+                ))}
+              </select>
+              <span className="block text-xs text-slate-500">
+                Se restara de ese gasto en las estadisticas.
+              </span>
+            </label>
+          ) : null}
+        </div>
+      ) : null}
 
       <label className="block space-y-1.5">
         <span className="text-sm font-medium text-slate-700">

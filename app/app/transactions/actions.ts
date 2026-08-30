@@ -43,6 +43,11 @@ export async function updateTransaction(
   const subcategoryId = String(formData.get("subcategoryId") ?? "").trim();
   const description = String(formData.get("description") ?? "").trim();
   const status = String(formData.get("status") ?? "").trim() as TransactionStatus;
+  const isReimbursement =
+    type === "income" && formData.get("isReimbursement") === "on";
+  const reimbursesTransactionId = String(
+    formData.get("reimbursesTransactionId") ?? "",
+  ).trim();
   const amount = parseMoneyInput(formData.get("amount"));
 
   if (!transactionId) {
@@ -84,8 +89,12 @@ export async function updateTransaction(
     return { error: "Selecciona una categoria." };
   }
 
-  if (type === "income" && !subcategoryId) {
+  if (type === "income" && !isReimbursement && !subcategoryId) {
     return { error: "Selecciona una subcategoria." };
+  }
+
+  if (isReimbursement && !reimbursesTransactionId) {
+    return { error: "Selecciona el gasto asociado al reembolso." };
   }
 
   let nextCategoryId: string | null = null;
@@ -93,6 +102,7 @@ export async function updateTransaction(
   let isInvestment = false;
   let includeInLivingExpenses = true;
   let isTravelIncome = false;
+  let nextReimbursesTransactionId: string | null = null;
 
   if (type === "expense") {
     const { data: category, error: categoryError } = await supabase
@@ -130,7 +140,27 @@ export async function updateTransaction(
     includeInLivingExpenses = !isInvestment;
   }
 
-  if (type === "income") {
+  if (type === "income" && isReimbursement) {
+    const { data: reimbursedExpense, error: reimbursedExpenseError } =
+      await supabase
+        .from("transactions")
+        .select("id,type")
+        .eq("id", reimbursesTransactionId)
+        .eq("user_id", user.id)
+        .eq("type", "expense")
+        .single();
+
+    if (reimbursedExpenseError || !reimbursedExpense) {
+      return { error: "El gasto asociado no es valido." };
+    }
+
+    nextReimbursesTransactionId = reimbursedExpense.id;
+    includeInLivingExpenses = false;
+    isInvestment = false;
+    isTravelIncome = false;
+  }
+
+  if (type === "income" && !isReimbursement) {
     const { data: subcategory, error: subcategoryError } = await supabase
       .from("subcategories")
       .select("id,name,category_id")
@@ -169,8 +199,10 @@ export async function updateTransaction(
       description: description || null,
       include_in_living_expenses: includeInLivingExpenses,
       is_investment: isInvestment,
+      is_reimbursement: isReimbursement,
       is_travel_income: isTravelIncome,
       month: getMonthKey(date),
+      reimburses_transaction_id: nextReimbursesTransactionId,
       status,
       subcategory_id: nextSubcategoryId,
       type,

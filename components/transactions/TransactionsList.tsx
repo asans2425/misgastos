@@ -24,6 +24,11 @@ type SubcategoryOption = {
   name: string;
 };
 
+type ReimbursementTargetOption = {
+  id: string;
+  label: string;
+};
+
 type TransactionItem = {
   amount: number;
   categoryId: string | null;
@@ -32,7 +37,9 @@ type TransactionItem = {
   description: string | null;
   id: string;
   isInvestment: boolean;
+  isReimbursement: boolean;
   isTravelIncome: boolean;
+  reimbursesTransactionId: string | null;
   status: TransactionStatus;
   subcategoryId: string | null;
   subcategoryName: string;
@@ -46,6 +53,7 @@ type TransactionGroup = {
 
 type TransactionEditorProps = Readonly<{
   categories: CategoryOption[];
+  reimbursementTargets: ReimbursementTargetOption[];
   returnTo: string;
   subcategories: SubcategoryOption[];
   transaction: TransactionItem;
@@ -54,6 +62,7 @@ type TransactionEditorProps = Readonly<{
 type TransactionsListProps = Readonly<{
   categories: CategoryOption[];
   groups: TransactionGroup[];
+  reimbursementTargets: ReimbursementTargetOption[];
   returnTo: string;
   subcategories: SubcategoryOption[];
 }>;
@@ -108,6 +117,7 @@ function getPrimaryLabel(transaction: TransactionItem) {
 
 function TransactionEditor({
   categories,
+  reimbursementTargets,
   returnTo,
   subcategories,
   transaction,
@@ -118,6 +128,9 @@ function TransactionEditor({
     initialState,
   );
   const [categoryId, setCategoryId] = useState(transaction.categoryId ?? "");
+  const [isReimbursement, setIsReimbursement] = useState(
+    transaction.isReimbursement,
+  );
   const editableCategories = useMemo(
     () =>
       categories.filter((category) =>
@@ -178,6 +191,11 @@ function TransactionEditor({
         {transaction.isTravelIncome ? (
           <span className="rounded-full bg-sky-100 px-2.5 py-1 text-xs font-semibold text-sky-900">
             VIAJES
+          </span>
+        ) : null}
+        {transaction.isReimbursement ? (
+          <span className="rounded-full bg-violet-100 px-2.5 py-1 text-xs font-semibold text-violet-900">
+            Reembolso
           </span>
         ) : null}
         {transaction.isInvestment ? (
@@ -256,7 +274,7 @@ function TransactionEditor({
                 className="h-11 w-full rounded-md border border-border-soft bg-white px-3 text-sm outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20"
                 defaultValue={transaction.subcategoryId ?? ""}
                 name="subcategoryId"
-                required={transaction.type === "income"}
+                required={transaction.type === "income" && !isReimbursement}
               >
                 <option value="">
                   {transaction.type === "income"
@@ -270,6 +288,49 @@ function TransactionEditor({
                 ))}
               </select>
             </label>
+
+            {transaction.type === "income" ? (
+              <div className="space-y-3 rounded-md border border-border-soft bg-surface-muted px-3 py-3">
+                <label className="flex items-center gap-3">
+                  <input
+                    className="size-4"
+                    checked={isReimbursement}
+                    name="isReimbursement"
+                    onChange={(event) =>
+                      setIsReimbursement(event.target.checked)
+                    }
+                    type="checkbox"
+                    value="on"
+                  />
+                  <span className="text-sm font-medium text-slate-700">
+                    Es un reembolso de un gasto
+                  </span>
+                </label>
+
+                {isReimbursement ? (
+                  <label className="block space-y-1.5">
+                    <span className="text-sm font-medium text-slate-700">
+                      Gasto asociado
+                    </span>
+                    <select
+                      className="h-11 w-full rounded-md border border-border-soft bg-white px-3 text-sm outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20"
+                      defaultValue={transaction.reimbursesTransactionId ?? ""}
+                      name="reimbursesTransactionId"
+                      required={isReimbursement}
+                    >
+                      <option value="">Selecciona el gasto original</option>
+                      {reimbursementTargets
+                        .filter((target) => target.id !== transaction.id)
+                        .map((target) => (
+                          <option key={target.id} value={target.id}>
+                            {target.label}
+                          </option>
+                        ))}
+                    </select>
+                  </label>
+                ) : null}
+              </div>
+            ) : null}
 
             <label className="block space-y-1.5">
               <span className="text-sm font-medium text-slate-700">
@@ -347,6 +408,7 @@ function TransactionEditor({
 export function TransactionsList({
   categories,
   groups,
+  reimbursementTargets,
   returnTo,
   subcategories,
 }: TransactionsListProps) {
@@ -363,6 +425,7 @@ export function TransactionsList({
               <TransactionEditor
                 categories={categories}
                 key={transaction.id}
+                reimbursementTargets={reimbursementTargets}
                 returnTo={returnTo}
                 subcategories={subcategories}
                 transaction={transaction}

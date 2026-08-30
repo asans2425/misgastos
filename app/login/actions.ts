@@ -1,5 +1,6 @@
 "use server";
 
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { ensureUserProfile } from "@/lib/auth/profile";
 import {
@@ -107,4 +108,26 @@ export async function authenticateWithPassword(
   }
 
   redirect("/app");
+}
+
+export async function authenticateWithGoogle(): Promise<AuthFormState> {
+  const supabase = await createSupabaseServerClient();
+  const origin = (await headers()).get("origin");
+
+  if (!origin) {
+    return { error: "No se ha podido preparar el login con Google." };
+  }
+
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    options: {
+      redirectTo: `${origin}/auth/callback?next=/app`,
+    },
+    provider: "google",
+  });
+
+  if (error || !data.url) {
+    return { error: error?.message ?? "No se ha podido iniciar Google." };
+  }
+
+  redirect(data.url);
 }

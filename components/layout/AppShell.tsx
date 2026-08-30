@@ -8,10 +8,10 @@ type AppShellProps = Readonly<{
 
 export function AppShell({ children, userEmail }: AppShellProps) {
   return (
-    <div className="min-h-screen bg-background md:flex">
+    <div className="min-h-dvh bg-background md:flex">
       <DesktopSidebar />
-      <div className="min-w-0 flex-1 pb-20 md:pb-0">
-        <main className="mx-auto w-full max-w-6xl px-4 py-5 sm:px-6 md:px-8 md:py-8">
+      <div className="min-w-0 flex-1 pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-0">
+        <main className="mx-auto w-full max-w-6xl px-4 pb-5 pt-[calc(1.25rem+env(safe-area-inset-top))] sm:px-6 md:px-8 md:py-8">
           <div className="mb-6 flex flex-col gap-3 rounded-lg border border-border-soft bg-surface p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="text-xs font-semibold uppercase text-slate-400">

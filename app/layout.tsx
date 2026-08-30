@@ -1,5 +1,6 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { PwaRuntime } from "@/components/pwa/PwaRuntime";
 import { cn } from "@/lib/utils/cn";
 import "./globals.css";
 
@@ -14,11 +15,36 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  applicationName: "MoneyFlow Albert",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "MoneyFlow",
+  },
   title: {
     default: "MoneyFlow Albert",
     template: "%s | MoneyFlow Albert",
   },
-  description: "Base tecnica para una app personal de finanzas mobile-first.",
+  description: "App personal de finanzas mobile-first.",
+  formatDetection: {
+    telephone: false,
+  },
+  icons: {
+    apple: "/icons/apple-touch-icon.png",
+    icon: [
+      { sizes: "192x192", url: "/icons/icon-192.png", type: "image/png" },
+      { sizes: "512x512", url: "/icons/icon-512.png", type: "image/png" },
+    ],
+  },
+  manifest: "/manifest.webmanifest",
+};
+
+export const viewport: Viewport = {
+  initialScale: 1,
+  maximumScale: 1,
+  themeColor: "#0f766e",
+  viewportFit: "cover",
+  width: "device-width",
 };
 
 export default function RootLayout({
@@ -36,6 +62,7 @@ export default function RootLayout({
       )}
     >
       <body className="min-h-full bg-background text-foreground">
+        <PwaRuntime />
         {children}
       </body>
     </html>

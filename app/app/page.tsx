@@ -10,6 +10,7 @@ import {
   formatMonthLabel,
   getMonthKey,
 } from "@/lib/finance";
+import { throwIfSupabaseError } from "@/lib/supabase/errors";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { cn } from "@/lib/utils/cn";
 
@@ -27,7 +28,9 @@ type TransactionView = {
   description: string | null;
   id: string;
   is_investment: boolean;
+  is_reimbursement: boolean;
   is_travel_income: boolean;
+  reimburses_transaction_id: string | null;
   status: "confirmed" | "edited" | "pending";
   subcategoryName: string;
   type: "expense" | "income" | "transfer";
@@ -95,11 +98,12 @@ export default async function AppHomePage({ searchParams }: AppHomePageProps) {
   const selectedMonth = params.month || getMonthKey();
   const monthDate = new Date(`${selectedMonth}-01T00:00:00`);
   const [
-    { data: categoriesData },
-    { data: subcategoriesData },
-    { data: accountsData },
-    { data: quickActionsData },
-    { data: transactionRowsData },
+    { data: categoriesData, error: categoriesError },
+    { data: subcategoriesData, error: subcategoriesError },
+    { data: accountsData, error: accountsError },
+    { data: quickActionsData, error: quickActionsError },
+    { data: transactionRowsData, error: transactionRowsError },
+    { data: bucketRowsData, error: bucketRowsError },
   ] = await Promise.all([
     supabase
       .from("categories")
@@ -116,6 +120,7 @@ export default async function AppHomePage({ searchParams }: AppHomePageProps) {
       .select("id,name,sort_order")
       .eq("user_id", user.id)
       .eq("is_active", true)
+      .eq("type", "normal")
       .order("sort_order", { ascending: true }),
     supabase
       .from("quick_actions")
@@ -127,18 +132,33 @@ export default async function AppHomePage({ searchParams }: AppHomePageProps) {
     supabase
       .from("transactions")
       .select(
-        "id,amount,date,description,type,status,is_investment,is_travel_income,category_id,subcategory_id,created_at",
+        "id,amount,date,description,type,status,is_investment,is_reimbursement,is_travel_income,reimburses_transaction_id,category_id,subcategory_id,created_at",
       )
       .eq("user_id", user.id)
       .eq("month", selectedMonth)
       .order("date", { ascending: false })
       .order("created_at", { ascending: false }),
+    supabase
+      .from("savings_buckets")
+      .select("id,name,current_balance,target_amount,initial_balance,color,is_active,sort_order")
+      .eq("user_id", user.id)
+      .eq("is_active", true)
+      .order("sort_order", { ascending: true }),
   ]);
+
+  throwIfSupabaseError(categoriesError);
+  throwIfSupabaseError(subcategoriesError);
+  throwIfSupabaseError(accountsError);
+  throwIfSupabaseError(quickActionsError);
+  throwIfSupabaseError(transactionRowsError);
+  throwIfSupabaseError(bucketRowsError);
+
   const categories = categoriesData ?? [];
   const subcategories = subcategoriesData ?? [];
   const accounts = accountsData ?? [];
   const quickActions = quickActionsData ?? [];
   const transactionRows = transactionRowsData ?? [];
+  const bucketRows = bucketRowsData ?? [];
 
   const categoriesById = new Map(categories.map((category) => [category.id, category]));
   const subcategoriesById = new Map(
@@ -155,8 +175,11 @@ export default async function AppHomePage({ searchParams }: AppHomePageProps) {
     categoryId: transaction.category_id,
     categoryName:
       categoriesById.get(transaction.category_id ?? "")?.name ?? "Sin categoria",
+    id: transaction.id,
     is_investment: transaction.is_investment,
+    is_reimbursement: transaction.is_reimbursement,
     is_travel_income: transaction.is_travel_income,
+    reimburses_transaction_id: transaction.reimburses_transaction_id,
     subcategoryId: transaction.subcategory_id,
     subcategoryName:
       subcategoriesById.get(transaction.subcategory_id ?? "")?.name ??
@@ -174,7 +197,9 @@ export default async function AppHomePage({ searchParams }: AppHomePageProps) {
       description: transaction.description,
       id: transaction.id,
       is_investment: transaction.is_investment,
+      is_reimbursement: transaction.is_reimbursement,
       is_travel_income: transaction.is_travel_income,
+      reimburses_transaction_id: transaction.reimburses_transaction_id,
       status: transaction.status,
       subcategoryName:
         subcategoriesById.get(transaction.subcategory_id ?? "")?.name ??
@@ -237,12 +262,12 @@ export default async function AppHomePage({ searchParams }: AppHomePageProps) {
         </section>
 
         <MonthlySnapshot
+          expandedBalance={summary.expandedBalance}
           investment={summary.investment}
           livingExpenses={summary.livingExpenses}
           monthlySavings={summary.monthlySavings}
           normalIncome={summary.normalIncome}
-          travelIncome={summary.travelIncome}
-          travelSavings={summary.travelSavings}
+          totalExpenses={summary.totalExpenses}
         />
 
         <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
@@ -341,6 +366,11 @@ export default async function AppHomePage({ searchParams }: AppHomePageProps) {
                           VIAJES
                         </span>
                       ) : null}
+                      {transaction.is_reimbursement ? (
+                        <span className="rounded-full bg-violet-100 px-2.5 py-1 text-xs font-semibold text-violet-900">
+                          Reembolso
+                        </span>
+                      ) : null}
                       {transaction.is_investment ? (
                         <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-900">
                           Inversion
@@ -375,6 +405,58 @@ export default async function AppHomePage({ searchParams }: AppHomePageProps) {
                     </p>
                   </div>
                 </article>
+              ))}
+            </div>
+          )}
+        </section>
+
+        <section className="rounded-lg border border-border-soft bg-surface p-4 shadow-sm">
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <div>
+              <h2 className="text-lg font-semibold text-slate-950">Huchas</h2>
+              <p className="mt-1 text-sm text-slate-500">
+                Dinero apartado sin contar como gasto.
+              </p>
+            </div>
+            <Link
+              className="inline-flex items-center gap-2 text-sm font-semibold text-brand transition hover:text-brand-strong"
+              href="/app/settings/buckets"
+            >
+              Gestionar
+              <ArrowRight aria-hidden="true" size={16} />
+            </Link>
+          </div>
+
+          {bucketRows.length === 0 ? (
+            <p className="text-sm text-slate-500">
+              Crea tu primera hucha para separar objetivos como AHORROS, VIAJES o COCHE.
+            </p>
+          ) : (
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              {bucketRows.map((bucket) => (
+                <div
+                  className="rounded-md border border-border-soft bg-white p-3"
+                  key={bucket.id}
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="truncate text-sm font-semibold text-slate-900">
+                      {bucket.name}
+                    </p>
+                    <span
+                      aria-hidden="true"
+                      className="size-5 shrink-0 rounded-full border border-border-soft"
+                      style={{ backgroundColor: bucket.color ?? "#e2e8f0" }}
+                    />
+                  </div>
+                  <p className="mt-2 text-xl font-semibold text-slate-950">
+                    {formatMoney(bucket.current_balance)}
+                  </p>
+                  {bucket.target_amount ? (
+                    <p className="mt-1 text-xs font-medium text-slate-500">
+                      Objetivo {formatMoney(bucket.target_amount)}
+                    </p>
+                  ) : null}
+                </div>
               ))}
             </div>
           )}

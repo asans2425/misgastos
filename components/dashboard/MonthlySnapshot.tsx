@@ -2,21 +2,21 @@ import { DashboardMetricCard } from "@/components/dashboard/DashboardMetricCard"
 import { formatMoney } from "@/lib/finance";
 
 type MonthlySnapshotProps = Readonly<{
+  expandedBalance: number;
   investment: number;
   livingExpenses: number;
   monthlySavings: number;
   normalIncome: number;
-  travelIncome: number;
-  travelSavings: number;
+  totalExpenses: number;
 }>;
 
 export function MonthlySnapshot({
+  expandedBalance,
   investment,
   livingExpenses,
   monthlySavings,
   normalIncome,
-  travelIncome,
-  travelSavings,
+  totalExpenses,
 }: MonthlySnapshotProps) {
   return (
     <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
@@ -28,15 +28,9 @@ export function MonthlySnapshot({
       />
       <DashboardMetricCard
         accent="teal"
-        helper="Ahorro calculado"
-        label="AHORROS del mes"
+        helper="Ingresos menos gastos"
+        label="Ahorro del mes"
         value={formatMoney(monthlySavings)}
-      />
-      <DashboardMetricCard
-        accent="blue"
-        helper="Ingresos destinados a viajes"
-        label="VIAJES del mes"
-        value={formatMoney(travelSavings)}
       />
       <DashboardMetricCard
         accent="amber"
@@ -46,15 +40,21 @@ export function MonthlySnapshot({
       />
       <DashboardMetricCard
         accent="emerald"
-        helper="Ingresos del dia a dia"
-        label="Ingresos normales"
+        helper="Todo entra en cuenta principal"
+        label="Ingresos"
         value={formatMoney(normalIncome)}
       />
       <DashboardMetricCard
+        accent="slate"
+        helper="Gasto ordinario e inversion"
+        label="Gastos totales"
+        value={formatMoney(totalExpenses)}
+      />
+      <DashboardMetricCard
         accent="blue"
-        helper="Clases, webs y extras de viajes"
-        label="Ingresos viajes"
-        value={formatMoney(travelIncome)}
+        helper="Resultado global"
+        label="Balance del mes"
+        value={formatMoney(expandedBalance)}
       />
     </section>
   );

@@ -4,11 +4,9 @@ import { redirect } from "next/navigation";
 import { getMonthKey, parseMoneyInput } from "@/lib/finance";
 import {
   isInvestmentCategoryOrSubcategory,
-  isNormalIncomeSubcategory,
-  isTravelIncomeSubcategory,
 } from "@/lib/finance/transactionRules";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import type { IncomeDestinationMode, TransactionInsert } from "@/types/finance";
+import type { TransactionInsert } from "@/types/finance";
 
 export type CreateTransactionState = {
   error?: string;
@@ -33,10 +31,12 @@ export async function createTransaction(
   const categoryId = String(formData.get("categoryId") ?? "").trim();
   const subcategoryId = String(formData.get("subcategoryId") ?? "").trim();
   const description = String(formData.get("description") ?? "").trim();
-  const incomeDestination = String(
-    formData.get("incomeDestination") ?? "normal",
-  ) as IncomeDestinationMode;
   const isInvestment = formData.get("isInvestment") === "on";
+  const isReimbursement =
+    type === "income" && formData.get("isReimbursement") === "on";
+  const reimbursesTransactionId = String(
+    formData.get("reimbursesTransactionId") ?? "",
+  ).trim();
   const amount = parseMoneyInput(formData.get("amount"));
 
   if (type !== "expense" && type !== "income") {
@@ -74,8 +74,12 @@ export async function createTransaction(
     return { error: "Selecciona una categoria para el gasto." };
   }
 
-  if (type === "income" && !subcategoryId) {
+  if (type === "income" && !isReimbursement && !subcategoryId) {
     return { error: "Selecciona una fuente de ingreso." };
+  }
+
+  if (isReimbursement && !reimbursesTransactionId) {
+    return { error: "Selecciona el gasto que te estan devolviendo." };
   }
 
   let payload: TransactionInsert;
@@ -137,6 +141,41 @@ export async function createTransaction(
       type: "expense",
       user_id: user.id,
     };
+  } else if (isReimbursement) {
+    const { data: reimbursedExpense, error: reimbursedExpenseError } =
+      await supabase
+        .from("transactions")
+        .select("id,type")
+        .eq("id", reimbursesTransactionId)
+        .eq("user_id", user.id)
+        .eq("type", "expense")
+        .single();
+
+    if (reimbursedExpenseError || !reimbursedExpense) {
+      return { error: "El gasto asociado no es valido." };
+    }
+
+    payload = {
+      account_id: account.id,
+      amount,
+      category_id: null,
+      counts_for_savings: false,
+      date,
+      description: description || "Reembolso",
+      include_in_living_expenses: false,
+      is_fixed: false,
+      is_investment: false,
+      is_reimbursement: true,
+      is_recurring: false,
+      is_travel_income: false,
+      merchant: null,
+      month: getMonthKey(date),
+      reimburses_transaction_id: reimbursedExpense.id,
+      status: "confirmed",
+      subcategory_id: null,
+      type: "income",
+      user_id: user.id,
+    };
   } else {
     const { data: subcategory, error: subcategoryError } = await supabase
       .from("subcategories")
@@ -160,17 +199,6 @@ export async function createTransaction(
       return { error: "La categoria del ingreso no es valida." };
     }
 
-    const inferredTravelIncome = isTravelIncomeSubcategory(subcategory.name);
-    const inferredNormalIncome = isNormalIncomeSubcategory(subcategory.name);
-
-    if (incomeDestination === "travel" && !inferredTravelIncome) {
-      return { error: "La fuente elegida no pertenece a ingresos VIAJES." };
-    }
-
-    if (incomeDestination === "normal" && !inferredNormalIncome) {
-      return { error: "La fuente elegida no pertenece a ingresos normales." };
-    }
-
     payload = {
       account_id: account.id,
       amount,
@@ -181,10 +209,12 @@ export async function createTransaction(
       include_in_living_expenses: true,
       is_fixed: false,
       is_investment: false,
+      is_reimbursement: false,
       is_recurring: false,
-      is_travel_income: inferredTravelIncome,
+      is_travel_income: false,
       merchant: null,
       month: getMonthKey(date),
+      reimburses_transaction_id: null,
       status: "confirmed",
       subcategory_id: subcategory.id,
       type: "income",

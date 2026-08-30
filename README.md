@@ -22,6 +22,17 @@ npm run dev
 
 Abre `http://localhost:3000`.
 
+## Uso como app movil
+
+La app incluye manifest PWA, iconos y service worker minimo. Al desplegarla en
+Vercel con HTTPS se puede anadir a la pantalla de inicio:
+
+- iPhone/Safari: Compartir -> Anadir a pantalla de inicio.
+- Android/Chrome: menu del navegador -> Instalar app o Anadir a pantalla de
+  inicio.
+
+La PWA arranca en `/app` y se muestra en modo `standalone`.
+
 ## Validacion
 
 ```bash
@@ -64,19 +75,37 @@ propios datos.
 
 ## Auth
 
-`/login` permite login y registro con email/password. Las rutas bajo `/app`
-estan protegidas: sin sesion redirigen a `/login`.
+`/login` permite login y registro con email/password y login con Google si el
+provider esta configurado en Supabase. Las rutas bajo `/app` estan protegidas:
+sin sesion redirigen a `/login`.
 
 Al iniciar sesion se crea el `profile` si falta y, si el usuario no tiene datos,
 se ejecuta `initializeUserData(userId)`.
 
 ## Datos iniciales
 
-El seed crea cuentas para `Cuenta normal`, `AHORROS` y `VIAJES`, categorias,
-subcategorias, recurrentes editables y acciones rapidas iniciales.
+El seed crea `Cuenta normal`, categorias, subcategorias, recurrentes editables,
+acciones rapidas iniciales y huchas iniciales como `AHORROS` y `VIAJES`.
 
-La pantalla `/app` muestra el usuario autenticado, el mes actual y los contadores
-de datos iniciales para confirmar que el seed se ha ejecutado.
+La pantalla `/app` muestra un dashboard mensual con movimientos reales,
+acciones rapidas de gasto, ultimos movimientos y resumen financiero.
+
+## Configuracion personal
+
+- `/app/settings/recurring`: permite crear, editar, pausar, eliminar y generar
+  gastos e ingresos fijos del mes.
+- `/app/settings/categories`: permite crear y editar categorias y
+  subcategorias para adaptar la app a cada persona.
+- `/app/settings/buckets`: permite crear huchas y registrar aportaciones o
+  retiradas internas sin que cuenten como gasto o ingreso.
+
+La app usa una cuenta operativa principal. Apartar dinero a una hucha no es un
+gasto estadistico; sirve para compartimentar objetivos.
+
+Los reembolsos se registran como ingresos enlazados a un gasto original. No
+cuentan como ingreso real del mes: reducen el gasto neto de esa categoria para
+que casos como cenas, padel o compras pagadas por una persona no deformen las
+estadisticas.
 
 ## Rutas
 
@@ -86,3 +115,6 @@ de datos iniciales para confirmar que el seed se ha ejecutado.
 - `/app/add`
 - `/app/analysis`
 - `/app/settings`
+- `/app/settings/recurring`
+- `/app/settings/categories`
+- `/app/settings/buckets`

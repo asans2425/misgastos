@@ -9,7 +9,9 @@ export type Json =
 export type AccountType = "cash" | "normal" | "other" | "savings" | "travel";
 export type CategoryType = "expense" | "income" | "special";
 export type DestinationType = "ahorros" | "normal" | "viajes";
+export type BucketMovementType = "contribution" | "withdrawal";
 export type RecurringItemType = "expense" | "income";
+export type QuickActionType = "expense" | "income";
 export type TransactionStatus = "confirmed" | "edited" | "pending";
 export type TransactionType = "expense" | "income" | "transfer";
 
@@ -125,7 +127,7 @@ type PublicTables = {
       label: string;
       sort_order: number;
       subcategory_id: string | null;
-      type: RecurringItemType;
+      type: QuickActionType;
       updated_at: string;
       user_id: string;
     };
@@ -140,7 +142,7 @@ type PublicTables = {
       label: string;
       sort_order?: number;
       subcategory_id?: string | null;
-      type: RecurringItemType;
+      type: QuickActionType;
       updated_at?: string;
       user_id: string;
     };
@@ -155,7 +157,7 @@ type PublicTables = {
       label?: string;
       sort_order?: number;
       subcategory_id?: string | null;
-      type?: RecurringItemType;
+      type?: QuickActionType;
       updated_at?: string;
       user_id?: string;
     };
@@ -221,6 +223,90 @@ type PublicTables = {
     };
     Relationships: [];
   };
+  savings_buckets: {
+    Row: {
+      color: string | null;
+      created_at: string;
+      current_balance: number;
+      icon: string | null;
+      id: string;
+      initial_balance: number;
+      is_active: boolean;
+      name: string;
+      sort_order: number;
+      target_amount: number | null;
+      updated_at: string;
+      user_id: string;
+    };
+    Insert: {
+      color?: string | null;
+      created_at?: string;
+      current_balance?: number;
+      icon?: string | null;
+      id?: string;
+      initial_balance?: number;
+      is_active?: boolean;
+      name: string;
+      sort_order?: number;
+      target_amount?: number | null;
+      updated_at?: string;
+      user_id: string;
+    };
+    Update: {
+      color?: string | null;
+      created_at?: string;
+      current_balance?: number;
+      icon?: string | null;
+      id?: string;
+      initial_balance?: number;
+      is_active?: boolean;
+      name?: string;
+      sort_order?: number;
+      target_amount?: number | null;
+      updated_at?: string;
+      user_id?: string;
+    };
+    Relationships: [];
+  };
+  bucket_movements: {
+    Row: {
+      amount: number;
+      bucket_id: string;
+      created_at: string;
+      date: string;
+      description: string | null;
+      id: string;
+      month: string;
+      type: BucketMovementType;
+      updated_at: string;
+      user_id: string;
+    };
+    Insert: {
+      amount: number;
+      bucket_id: string;
+      created_at?: string;
+      date: string;
+      description?: string | null;
+      id?: string;
+      month: string;
+      type: BucketMovementType;
+      updated_at?: string;
+      user_id: string;
+    };
+    Update: {
+      amount?: number;
+      bucket_id?: string;
+      created_at?: string;
+      date?: string;
+      description?: string | null;
+      id?: string;
+      month?: string;
+      type?: BucketMovementType;
+      updated_at?: string;
+      user_id?: string;
+    };
+    Relationships: [];
+  };
   subcategories: {
     Row: {
       category_id: string;
@@ -278,10 +364,12 @@ type PublicTables = {
       include_in_living_expenses: boolean;
       is_fixed: boolean;
       is_investment: boolean;
+      is_reimbursement: boolean;
       is_recurring: boolean;
       is_travel_income: boolean;
       merchant: string | null;
       month: string;
+      reimburses_transaction_id: string | null;
       recurring_item_id: string | null;
       status: TransactionStatus;
       subcategory_id: string | null;
@@ -303,10 +391,12 @@ type PublicTables = {
       include_in_living_expenses?: boolean;
       is_fixed?: boolean;
       is_investment?: boolean;
+      is_reimbursement?: boolean;
       is_recurring?: boolean;
       is_travel_income?: boolean;
       merchant?: string | null;
       month: string;
+      reimburses_transaction_id?: string | null;
       recurring_item_id?: string | null;
       status?: TransactionStatus;
       subcategory_id?: string | null;
@@ -328,10 +418,12 @@ type PublicTables = {
       include_in_living_expenses?: boolean;
       is_fixed?: boolean;
       is_investment?: boolean;
+      is_reimbursement?: boolean;
       is_recurring?: boolean;
       is_travel_income?: boolean;
       merchant?: string | null;
       month?: string;
+      reimburses_transaction_id?: string | null;
       recurring_item_id?: string | null;
       status?: TransactionStatus;
       subcategory_id?: string | null;

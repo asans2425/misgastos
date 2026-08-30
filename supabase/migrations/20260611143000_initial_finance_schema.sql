@@ -129,10 +129,12 @@ create table public.transactions (
   is_fixed boolean not null default false,
   is_recurring boolean not null default false,
   is_investment boolean not null default false,
+  is_reimbursement boolean not null default false,
   is_travel_income boolean not null default false,
   counts_for_savings boolean not null default true,
   include_in_living_expenses boolean not null default true,
   status text not null default 'confirmed',
+  reimburses_transaction_id uuid,
   recurring_item_id uuid,
   generated_for_month text,
   created_at timestamptz not null default now(),
@@ -150,6 +152,9 @@ create table public.transactions (
   foreign key (destination_account_id, user_id)
     references public.accounts(id, user_id)
     on delete restrict,
+  foreign key (reimburses_transaction_id)
+    references public.transactions(id)
+    on delete set null,
   foreign key (recurring_item_id, user_id)
     references public.recurring_items(id, user_id)
     on delete restrict,
@@ -159,6 +164,11 @@ create table public.transactions (
     check (amount > 0),
   constraint transactions_status_check
     check (status in ('pending', 'confirmed', 'edited')),
+  constraint transactions_reimbursement_type_check
+    check (
+      (is_reimbursement = false and reimburses_transaction_id is null)
+      or type = 'income'
+    ),
   constraint transactions_month_check
     check (month ~ '^[0-9]{4}-[0-9]{2}$'),
   constraint transactions_generated_for_month_check
@@ -229,6 +239,10 @@ create index transactions_user_id_idx on public.transactions(user_id);
 create index transactions_user_month_idx on public.transactions(user_id, month);
 create index transactions_user_date_idx on public.transactions(user_id, date desc);
 create index transactions_recurring_item_id_idx on public.transactions(recurring_item_id);
+create index transactions_reimburses_transaction_id_idx on public.transactions(reimburses_transaction_id);
+create unique index transactions_user_recurring_month_unique_idx
+  on public.transactions(user_id, recurring_item_id, generated_for_month)
+  where recurring_item_id is not null and generated_for_month is not null;
 
 create index quick_actions_user_id_idx on public.quick_actions(user_id);
 create index quick_actions_user_active_sort_idx on public.quick_actions(user_id, is_active, sort_order);
