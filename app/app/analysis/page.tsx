@@ -6,7 +6,7 @@ import { PageShell } from "@/components/ui/PageShell";
 import {
   calculateMonthlySummary,
   formatMoney,
-  formatMonthLabel,
+  formatShortMonthLabel,
   getFinancialMonthKey,
   getFinancialMonthRange,
 } from "@/lib/finance";
@@ -117,7 +117,7 @@ export default async function AnalysisPage({ searchParams }: AnalysisPageProps) 
     <PageShell title="Análisis">
       <div className="space-y-4 sm:space-y-6">
         <MonthPickerCard
-          monthLabel={formatMonthLabel(monthDate)}
+          monthLabel={formatShortMonthLabel(monthDate)}
           rangeLabel={`${formatRangeDate(monthRange.start)} - ${formatRangeDate(monthRange.end)}`}
           selectedMonth={selectedMonth}
         />

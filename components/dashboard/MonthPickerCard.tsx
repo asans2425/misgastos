@@ -2,7 +2,7 @@
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useTransition } from "react";
-import { CalendarDays, Loader2 } from "lucide-react";
+import { CalendarDays, ChevronDown, Loader2 } from "lucide-react";
 
 type MonthPickerCardProps = Readonly<{
   className?: string;
@@ -26,24 +26,43 @@ export function MonthPickerCard({
 
   return (
     <section
-      className={`rounded-lg border border-border-soft bg-surface p-3 shadow-sm sm:p-4 ${className ?? ""}`}
+      className={`rounded-lg border border-border-soft bg-surface px-3 py-2.5 shadow-sm sm:px-4 ${className ?? ""}`}
     >
-      <div className="flex items-center justify-between gap-3">
-        <div className="min-w-0">
-          <h1 className="text-xl font-semibold tracking-tight text-slate-950 sm:text-2xl">
-            {title}
-          </h1>
-          <div className="mt-1 flex items-center gap-2 text-xs font-semibold uppercase text-slate-400">
-            <CalendarDays aria-hidden="true" size={14} />
-            {monthLabel}
+      <div className="flex min-w-0 items-center justify-between gap-2">
+        <div className="flex min-w-0 items-center gap-2.5">
+          <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-brand/10 text-brand">
+            <CalendarDays aria-hidden="true" size={18} />
+          </span>
+          <div className="min-w-0">
+            <h1 className="truncate text-base font-semibold tracking-tight text-slate-950 sm:text-lg">
+              {title}
+            </h1>
+            <p className="truncate text-xs font-medium text-slate-500 sm:text-sm">
+              {rangeLabel}
+            </p>
           </div>
-          <p className="mt-0.5 text-sm text-slate-500">{rangeLabel}</p>
         </div>
 
-        <label className="relative shrink-0">
+        <label className="relative flex h-10 shrink-0 items-center overflow-hidden rounded-md border border-border-soft bg-white px-2.5 text-sm font-semibold text-slate-950 shadow-sm transition focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/20">
           <span className="sr-only">Mes</span>
+          <span className="flex items-center gap-1.5 whitespace-nowrap">
+            {monthLabel}
+            {isPending ? (
+              <Loader2
+                aria-hidden="true"
+                className="animate-spin text-slate-400"
+                size={15}
+              />
+            ) : (
+              <ChevronDown
+                aria-hidden="true"
+                className="text-slate-400"
+                size={15}
+              />
+            )}
+          </span>
           <input
-            className="h-10 w-32 rounded-md border border-border-soft bg-white px-2 text-sm outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20 min-[380px]:w-36"
+            className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
             defaultValue={selectedMonth}
             name="month"
             onChange={(event) => {
@@ -56,13 +75,6 @@ export function MonthPickerCard({
             }}
             type="month"
           />
-          {isPending ? (
-            <Loader2
-              aria-hidden="true"
-              className="absolute -right-7 top-3 animate-spin text-slate-400"
-              size={16}
-            />
-          ) : null}
         </label>
       </div>
     </section>

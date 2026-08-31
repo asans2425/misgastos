@@ -9,7 +9,7 @@ import {
   getFinancialMonthKey,
   getFinancialMonthRange,
   formatMoney,
-  formatMonthLabel,
+  formatShortMonthLabel,
 } from "@/lib/finance";
 import { throwIfSupabaseError } from "@/lib/supabase/errors";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -252,7 +252,7 @@ export default async function AppHomePage({ searchParams }: AppHomePageProps) {
       ) : null}
 
       <MonthPickerCard
-        monthLabel={formatMonthLabel(monthDate)}
+        monthLabel={formatShortMonthLabel(monthDate)}
         rangeLabel={`${formatRangeDate(monthRange.start)} - ${formatRangeDate(monthRange.end)}`}
         selectedMonth={selectedMonth}
       />
