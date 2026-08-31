@@ -1,6 +1,10 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import {
+  replaceTransactionInAccountBalance,
+  revertTransactionFromAccountBalance,
+} from "@/lib/accounts/balance";
 import { getFinancialMonthKey, parseMoneyInput } from "@/lib/finance";
 import {
   isInvestmentCategoryOrSubcategory,
@@ -92,7 +96,7 @@ export async function updateTransaction(
 
   const { data: existingTransaction, error: transactionError } = await supabase
     .from("transactions")
-    .select("id,account_id")
+    .select("id,account_id,amount,type")
     .eq("id", transactionId)
     .eq("user_id", user.id)
     .single();
@@ -233,6 +237,21 @@ export async function updateTransaction(
     return { error: error.message };
   }
 
+  const balanceError = await replaceTransactionInAccountBalance(
+    supabase,
+    user.id,
+    existingTransaction,
+    {
+      account_id: existingTransaction.account_id,
+      amount,
+      type,
+    },
+  );
+
+  if (balanceError) {
+    return { error: balanceError.message };
+  }
+
   redirect(withOutcome(returnTo, "updated"));
 }
 
@@ -253,11 +272,30 @@ export async function deleteTransaction(formData: FormData) {
     redirect(returnTo);
   }
 
-  await supabase
+  const { data: existingTransaction } = await supabase
+    .from("transactions")
+    .select("id,account_id,amount,type")
+    .eq("id", transactionId)
+    .eq("user_id", user.id)
+    .single();
+
+  const { error } = await supabase
     .from("transactions")
     .delete()
     .eq("id", transactionId)
     .eq("user_id", user.id);
+
+  if (error) {
+    redirect(returnTo);
+  }
+
+  if (existingTransaction) {
+    await revertTransactionFromAccountBalance(
+      supabase,
+      user.id,
+      existingTransaction,
+    );
+  }
 
   redirect(withOutcome(returnTo, "deleted"));
 }

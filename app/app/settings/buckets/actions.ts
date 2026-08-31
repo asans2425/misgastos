@@ -31,6 +31,42 @@ function isChecked(formData: FormData, name: string) {
   return formData.getAll(name).includes("on");
 }
 
+export async function savePrimaryAccountBalance(
+  _previousState: BucketFormState,
+  formData: FormData,
+): Promise<BucketFormState> {
+  const { supabase, userId } = await getCurrentUser();
+  const accountId = String(formData.get("accountId") ?? "").trim();
+  const balance = parseMoneyInput(formData.get("balance"));
+
+  if (!accountId) {
+    return { error: "No se ha encontrado la cuenta principal." };
+  }
+
+  if (balance === null) {
+    return { error: "Introduce el saldo actual de la cuenta." };
+  }
+
+  const { error } = await supabase
+    .from("accounts")
+    .update({
+      current_balance: balance,
+      initial_balance: balance,
+    })
+    .eq("id", accountId)
+    .eq("user_id", userId)
+    .eq("type", "normal");
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  revalidatePath("/app");
+  revalidatePath("/app/analysis");
+  revalidatePath("/app/settings/buckets");
+  redirectWithStatus("account-updated");
+}
+
 export async function saveBucket(
   _previousState: BucketFormState,
   formData: FormData,
@@ -175,6 +211,20 @@ export async function createBucketMovement(
     return { error: "La hucha seleccionada no es valida." };
   }
 
+  const { data: account, error: accountError } = await supabase
+    .from("accounts")
+    .select("id,current_balance")
+    .eq("user_id", userId)
+    .eq("type", "normal")
+    .eq("is_active", true)
+    .order("sort_order", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+
+  if (accountError) {
+    return { error: accountError.message };
+  }
+
   const delta = type === "contribution" ? amount : -amount;
   const nextBalance = bucket.current_balance + delta;
   const { error: insertError } = await supabase.from("bucket_movements").insert({
@@ -201,7 +251,21 @@ export async function createBucketMovement(
     return { error: updateError.message };
   }
 
+  if (account) {
+    const accountDelta = type === "contribution" ? -amount : amount;
+    const { error: accountUpdateError } = await supabase
+      .from("accounts")
+      .update({ current_balance: account.current_balance + accountDelta })
+      .eq("id", account.id)
+      .eq("user_id", userId);
+
+    if (accountUpdateError) {
+      return { error: accountUpdateError.message };
+    }
+  }
+
   revalidatePath("/app");
+  revalidatePath("/app/analysis");
   revalidatePath("/app/settings/buckets");
   redirectWithStatus(type === "contribution" ? "contributed" : "withdrawn");
 }

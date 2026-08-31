@@ -85,14 +85,35 @@ export default async function BucketsSettingsPage({
     throw error;
   }
 
+  const { data: accountRows, error: accountsError } = await supabase
+    .from("accounts")
+    .select("id,name,current_balance")
+    .eq("user_id", user.id)
+    .eq("type", "normal")
+    .eq("is_active", true)
+    .order("sort_order", { ascending: true })
+    .limit(1);
+
+  throwIfSupabaseError(accountsError);
+
   const today = new Date().toISOString().slice(0, 10);
+  const primaryAccount = accountRows?.[0] ?? null;
 
   return (
     <PageShell
-      description="Aparta dinero en huchas sin que cuente como gasto."
-      title="Huchas"
+      description="Controla tu cuenta principal y tus huchas sin afectar a las estadisticas."
+      title="Patrimonio y huchas"
     >
       <BucketsManager
+        primaryAccount={
+          primaryAccount
+            ? {
+                balance: primaryAccount.current_balance,
+                id: primaryAccount.id,
+                name: primaryAccount.name,
+              }
+            : null
+        }
         buckets={(bucketRows ?? []).map((bucket) => ({
           color: bucket.color,
           currentBalance: bucket.current_balance,

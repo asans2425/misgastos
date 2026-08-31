@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { applyTransactionToAccountBalance } from "@/lib/accounts/balance";
 import {
   getDateForFinancialMonthDay,
   getMonthKey,
@@ -267,6 +268,10 @@ export async function generateRecurringTransactions(formData: FormData) {
 
     if (error) {
       redirectWithStatus("generate-error");
+    }
+
+    for (const row of rows) {
+      await applyTransactionToAccountBalance(supabase, userId, row);
     }
   }
 

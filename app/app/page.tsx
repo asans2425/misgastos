@@ -1,6 +1,11 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ArrowRight, CalendarDays, ReceiptText } from "lucide-react";
+import {
+  ArrowRight,
+  CalendarDays,
+  Landmark,
+  ReceiptText,
+} from "lucide-react";
 import { MonthPickerCard } from "@/components/dashboard/MonthPickerCard";
 import { MonthlySnapshot } from "@/components/dashboard/MonthlySnapshot";
 import { QuickActionsPanel } from "@/components/dashboard/QuickActionsPanel";
@@ -123,7 +128,7 @@ export default async function AppHomePage({ searchParams }: AppHomePageProps) {
       .eq("is_active", true),
     supabase
       .from("accounts")
-      .select("id,name,sort_order")
+      .select("id,name,sort_order,current_balance")
       .eq("user_id", user.id)
       .eq("is_active", true)
       .eq("type", "normal")
@@ -194,6 +199,15 @@ export default async function AppHomePage({ searchParams }: AppHomePageProps) {
     accounts.find((account) => account.name === "Cuenta normal")?.id ??
     accounts[0]?.id ??
     "";
+  const primaryAccount =
+    accounts.find((account) => account.name === "Cuenta normal") ??
+    accounts[0] ??
+    null;
+  const bucketTotal = bucketRows.reduce(
+    (total, bucket) => total + bucket.current_balance,
+    0,
+  );
+  const netWorth = (primaryAccount?.current_balance ?? 0) + bucketTotal;
   const today = new Date().toISOString().slice(0, 10);
 
   const summaryInput = transactionRows.map((transaction) => ({
@@ -256,6 +270,32 @@ export default async function AppHomePage({ searchParams }: AppHomePageProps) {
         rangeLabel={`${formatRangeDate(monthRange.start)} - ${formatRangeDate(monthRange.end)}`}
         selectedMonth={selectedMonth}
       />
+
+      <section className="rounded-lg border border-border-soft bg-surface px-3 py-2.5 shadow-sm sm:px-4">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-2.5">
+            <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-brand/10 text-brand">
+              <Landmark aria-hidden="true" size={18} />
+            </span>
+            <div className="min-w-0">
+              <p className="text-xs font-semibold uppercase text-slate-400">
+                Cuenta
+              </p>
+              <p className="truncate text-xl font-semibold tracking-tight text-slate-950">
+                {formatMoney(primaryAccount?.current_balance ?? 0)}
+              </p>
+            </div>
+          </div>
+          <div className="shrink-0 text-right">
+            <p className="text-[11px] font-semibold uppercase text-slate-400">
+              Patrimonio
+            </p>
+            <p className="text-sm font-semibold text-slate-600">
+              {formatMoney(netWorth)}
+            </p>
+          </div>
+        </div>
+      </section>
 
       <MonthlySnapshot
         expandedBalance={summary.expandedBalance}

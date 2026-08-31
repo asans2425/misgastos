@@ -2,9 +2,11 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { applyTransactionToAccountBalance } from "@/lib/accounts/balance";
 import { getFinancialMonthKey, parseMoneyInput } from "@/lib/finance";
 import { isInvestmentCategoryOrSubcategory } from "@/lib/finance/transactionRules";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import type { TablesInsert } from "@/types/database";
 
 export async function logout() {
   const supabase = await createSupabaseServerClient();
@@ -143,7 +145,7 @@ export async function createQuickExpense(
     supabase,
     user.id,
   );
-  const { error } = await supabase.from("transactions").insert({
+  const payload: TablesInsert<"transactions"> = {
     account_id: account.id,
     amount,
     category_id: category.id,
@@ -161,10 +163,21 @@ export async function createQuickExpense(
     subcategory_id: subcategoryId,
     type: "expense",
     user_id: user.id,
-  });
+  };
+  const { error } = await supabase.from("transactions").insert(payload);
 
   if (error) {
     return { error: error.message };
+  }
+
+  const balanceError = await applyTransactionToAccountBalance(
+    supabase,
+    user.id,
+    payload,
+  );
+
+  if (balanceError) {
+    return { error: balanceError.message };
   }
 
   revalidatePath("/app");

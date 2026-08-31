@@ -1,10 +1,19 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { ArrowDownToLine, ArrowUpFromLine, Loader2, Save, Trash2 } from "lucide-react";
+import {
+  ArrowDownToLine,
+  ArrowUpFromLine,
+  Landmark,
+  Loader2,
+  PiggyBank,
+  Save,
+  Trash2,
+} from "lucide-react";
 import {
   createBucketMovement,
   deleteBucket,
+  savePrimaryAccountBalance,
   saveBucket,
   type BucketFormState,
 } from "@/app/app/settings/buckets/actions";
@@ -25,6 +34,11 @@ type BucketItem = {
 type BucketsManagerProps = Readonly<{
   buckets: BucketItem[];
   defaultDate: string;
+  primaryAccount: {
+    balance: number;
+    id: string;
+    name: string;
+  } | null;
   status?: string;
 }>;
 
@@ -37,11 +51,105 @@ function getStatusMessage(status?: string) {
   if (status === "deleted") return "Hucha eliminada correctamente.";
   if (status === "contributed") return "Aportacion registrada.";
   if (status === "withdrawn") return "Retirada registrada.";
+  if (status === "account-updated") return "Saldo de la cuenta actualizado.";
   if (status === "delete-error") {
     return "No se puede eliminar porque tiene movimientos. Puedes pausarla.";
   }
 
   return null;
+}
+
+function PrimaryAccountCard({
+  bucketTotal,
+  primaryAccount,
+}: {
+  bucketTotal: number;
+  primaryAccount: BucketsManagerProps["primaryAccount"];
+}) {
+  const [state, formAction, pending] = useActionState(
+    savePrimaryAccountBalance,
+    initialState,
+  );
+  const accountBalance = primaryAccount?.balance ?? 0;
+  const netWorth = accountBalance + bucketTotal;
+
+  return (
+    <section className="rounded-lg border border-border-soft bg-surface p-4 shadow-sm">
+      <div className="grid gap-3 sm:grid-cols-3">
+        <div className="rounded-md bg-brand/10 p-3">
+          <div className="flex items-center gap-2 text-xs font-semibold uppercase text-brand">
+            <Landmark aria-hidden="true" size={15} />
+            Cuenta
+          </div>
+          <p className="mt-2 text-2xl font-semibold text-slate-950">
+            {formatMoney(accountBalance)}
+          </p>
+          <p className="text-sm text-slate-500">
+            {primaryAccount?.name ?? "Cuenta principal"}
+          </p>
+        </div>
+        <div className="rounded-md bg-surface-muted p-3">
+          <div className="flex items-center gap-2 text-xs font-semibold uppercase text-slate-500">
+            <PiggyBank aria-hidden="true" size={15} />
+            Huchas
+          </div>
+          <p className="mt-2 text-2xl font-semibold text-slate-950">
+            {formatMoney(bucketTotal)}
+          </p>
+          <p className="text-sm text-slate-500">Dinero apartado</p>
+        </div>
+        <div className="rounded-md bg-slate-950 p-3 text-white">
+          <p className="text-xs font-semibold uppercase text-white/60">
+            Patrimonio total
+          </p>
+          <p className="mt-2 text-2xl font-semibold">
+            {formatMoney(netWorth)}
+          </p>
+          <p className="text-sm text-white/60">Cuenta + huchas</p>
+        </div>
+      </div>
+
+      {primaryAccount ? (
+        <form action={formAction} className="mt-4 grid gap-3 sm:grid-cols-[1fr_auto]">
+          <input name="accountId" type="hidden" value={primaryAccount.id} />
+          <label className="block space-y-1.5">
+            <span className="text-sm font-medium text-slate-700">
+              Saldo actual en la cuenta
+            </span>
+            <input
+              className="h-12 w-full rounded-md border border-border-soft bg-white px-3 text-base outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20"
+              defaultValue={primaryAccount.balance}
+              inputMode="decimal"
+              name="balance"
+              placeholder="0,00"
+              type="text"
+            />
+          </label>
+          <button
+            className="inline-flex h-12 items-center justify-center gap-2 self-end rounded-md bg-brand px-4 text-sm font-semibold text-white transition hover:bg-brand-strong disabled:opacity-70"
+            disabled={pending}
+            type="submit"
+          >
+            {pending ? (
+              <Loader2 aria-hidden="true" className="animate-spin" size={18} />
+            ) : (
+              <Save aria-hidden="true" size={18} />
+            )}
+            Guardar saldo
+          </button>
+          {state.error ? (
+            <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 sm:col-span-2">
+              {state.error}
+            </p>
+          ) : null}
+        </form>
+      ) : (
+        <p className="mt-4 rounded-md bg-surface-muted p-3 text-sm text-slate-500">
+          No se ha encontrado una cuenta principal activa.
+        </p>
+      )}
+    </section>
+  );
 }
 
 function BucketForm({ bucket }: { bucket?: BucketItem }) {
@@ -328,9 +436,14 @@ function BucketCard({
 export function BucketsManager({
   buckets,
   defaultDate,
+  primaryAccount,
   status,
 }: BucketsManagerProps) {
   const statusMessage = getStatusMessage(status);
+  const bucketTotal = buckets.reduce(
+    (total, bucket) => total + bucket.currentBalance,
+    0,
+  );
 
   return (
     <div className="space-y-6">
@@ -339,6 +452,11 @@ export function BucketsManager({
           {statusMessage}
         </section>
       ) : null}
+
+      <PrimaryAccountCard
+        bucketTotal={bucketTotal}
+        primaryAccount={primaryAccount}
+      />
 
       <section className="rounded-lg border border-border-soft bg-surface p-4 shadow-sm">
         <div className="mb-4">

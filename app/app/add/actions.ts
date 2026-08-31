@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { applyTransactionToAccountBalance } from "@/lib/accounts/balance";
 import { getFinancialMonthKey, parseMoneyInput } from "@/lib/finance";
 import {
   isInvestmentCategoryOrSubcategory,
@@ -247,6 +248,16 @@ export async function createTransaction(
 
   if (error) {
     return { error: error.message };
+  }
+
+  const balanceError = await applyTransactionToAccountBalance(
+    supabase,
+    user.id,
+    payload,
+  );
+
+  if (balanceError) {
+    return { error: balanceError.message };
   }
 
   redirect("/app?created=1");
