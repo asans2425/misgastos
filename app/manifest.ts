@@ -2,7 +2,7 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    background_color: "#f8fafc",
+    background_color: "#0f766e",
     categories: ["finance", "productivity"],
     description:
       "App personal de finanzas para registrar gastos e ingresos desde el movil.",
