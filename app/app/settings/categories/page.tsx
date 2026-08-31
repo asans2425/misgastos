@@ -1,6 +1,6 @@
-import { redirect } from "next/navigation";
 import { CategoriesManager } from "@/components/settings/categories/CategoriesManager";
 import { PageShell } from "@/components/ui/PageShell";
+import { requireCurrentUser } from "@/lib/auth/currentUser";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 type CategoriesSettingsPageProps = {
@@ -13,14 +13,8 @@ export default async function CategoriesSettingsPage({
   searchParams,
 }: CategoriesSettingsPageProps) {
   const params = await searchParams;
+  const user = await requireCurrentUser();
   const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/login");
-  }
 
   const [{ data: categoryRows }, { data: subcategoryRows }] = await Promise.all([
     supabase

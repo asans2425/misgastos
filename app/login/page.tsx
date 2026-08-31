@@ -2,17 +2,14 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { WalletCards } from "lucide-react";
 import { LoginForm } from "@/components/auth/LoginForm";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/auth/currentUser";
 
 export const metadata: Metadata = {
   title: "Login",
 };
 
 export default async function LoginPage() {
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
 
   if (user) {
     redirect("/app");

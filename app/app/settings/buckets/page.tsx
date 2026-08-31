@@ -1,7 +1,7 @@
-import { redirect } from "next/navigation";
 import { BucketsManager } from "@/components/settings/buckets/BucketsManager";
 import { PageShell } from "@/components/ui/PageShell";
 import { ensureDefaultSavingsBuckets } from "@/lib/auth/initialization";
+import { requireCurrentUser } from "@/lib/auth/currentUser";
 import {
   isSupabaseSchemaMissingError,
   throwIfSupabaseError,
@@ -18,14 +18,8 @@ export default async function BucketsSettingsPage({
   searchParams,
 }: BucketsSettingsPageProps) {
   const params = await searchParams;
+  const user = await requireCurrentUser();
   const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/login");
-  }
 
   try {
     await ensureDefaultSavingsBuckets(user.id, supabase);

@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import {
   ArrowRight,
   CalendarDays,
@@ -11,15 +10,11 @@ import { MonthlySnapshot } from "@/components/dashboard/MonthlySnapshot";
 import { QuickActionsPanel } from "@/components/dashboard/QuickActionsPanel";
 import {
   calculateMonthlySummary,
-  getFinancialMonthKey,
-  getFinancialMonthRange,
   formatMoney,
   formatShortMonthLabel,
 } from "@/lib/finance";
-import {
-  isSupabaseSchemaMissingError,
-  throwIfSupabaseError,
-} from "@/lib/supabase/errors";
+import { requireCurrentUser } from "@/lib/auth/currentUser";
+import { loadAppHomeData } from "@/lib/dashboard/homeData";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { cn } from "@/lib/utils/cn";
 
@@ -101,100 +96,24 @@ function getPrimaryLabel(transaction: TransactionView) {
 }
 
 export default async function AppHomePage({ searchParams }: AppHomePageProps) {
+  const user = await requireCurrentUser();
   const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
   const params = await searchParams;
-
-  if (!user) {
-    redirect("/login");
-  }
-
-  const [
-    { data: categoriesData, error: categoriesError },
-    { data: subcategoriesData, error: subcategoriesError },
-    { data: accountsData, error: accountsError },
-    { data: quickActionsData, error: quickActionsError },
-    { data: bucketRowsData, error: bucketRowsError },
-    { data: preferencesData, error: preferencesError },
-  ] = await Promise.all([
-    supabase
-      .from("categories")
-      .select("id,name")
-      .eq("user_id", user.id)
-      .eq("is_active", true),
-    supabase
-      .from("subcategories")
-      .select("id,name")
-      .eq("user_id", user.id)
-      .eq("is_active", true),
-    supabase
-      .from("accounts")
-      .select("id,name,sort_order,current_balance")
-      .eq("user_id", user.id)
-      .eq("is_active", true)
-      .eq("type", "normal")
-      .order("sort_order", { ascending: true }),
-    supabase
-      .from("quick_actions")
-      .select("id,label,category_id,subcategory_id,is_active,sort_order,type")
-      .eq("user_id", user.id)
-      .eq("is_active", true)
-      .eq("type", "expense")
-      .order("sort_order", { ascending: true }),
-    supabase
-      .from("savings_buckets")
-      .select("id,name,current_balance,target_amount,initial_balance,color,is_active,sort_order")
-      .eq("user_id", user.id)
-      .eq("is_active", true)
-      .order("sort_order", { ascending: true }),
-    supabase
-      .from("user_preferences")
-      .select("financial_month_start_day,financial_month_label_mode")
-      .eq("user_id", user.id)
-      .maybeSingle(),
-  ]);
-
-  throwIfSupabaseError(categoriesError);
-  throwIfSupabaseError(subcategoriesError);
-  throwIfSupabaseError(accountsError);
-  throwIfSupabaseError(quickActionsError);
-  if (bucketRowsError && !isSupabaseSchemaMissingError(bucketRowsError)) {
-    throwIfSupabaseError(bucketRowsError);
-  }
-  throwIfSupabaseError(preferencesError);
-
-  const financialMonthSettings = {
-    labelMode: preferencesData?.financial_month_label_mode ?? "same",
-    startDay: preferencesData?.financial_month_start_day ?? 1,
-  };
-  const selectedMonth =
-    params.month || getFinancialMonthKey(new Date(), financialMonthSettings);
-  const monthDate = new Date(`${selectedMonth}-01T00:00:00`);
-  const monthRange = getFinancialMonthRange(
+  const {
+    accounts,
+    bucketRows,
+    categories,
+    monthRange,
+    quickActions,
     selectedMonth,
-    financialMonthSettings,
-  );
-  const { data: transactionRowsData, error: transactionRowsError } = await supabase
-    .from("transactions")
-    .select(
-      "id,amount,date,description,type,status,is_investment,is_reimbursement,is_travel_income,reimburses_transaction_id,category_id,subcategory_id,created_at",
-    )
-    .eq("user_id", user.id)
-    .gte("date", monthRange.start)
-    .lte("date", monthRange.end)
-    .order("date", { ascending: false })
-    .order("created_at", { ascending: false });
-
-  throwIfSupabaseError(transactionRowsError);
-
-  const categories = categoriesData ?? [];
-  const subcategories = subcategoriesData ?? [];
-  const accounts = accountsData ?? [];
-  const quickActions = quickActionsData ?? [];
-  const transactionRows = transactionRowsData ?? [];
-  const bucketRows = bucketRowsError ? [] : (bucketRowsData ?? []);
+    subcategories,
+    transactionRows,
+  } = await loadAppHomeData({
+    selectedMonthParam: params.month,
+    supabase,
+    userId: user.id,
+  });
+  const monthDate = new Date(`${selectedMonth}-01T00:00:00`);
 
   const categoriesById = new Map(categories.map((category) => [category.id, category]));
   const subcategoriesById = new Map(

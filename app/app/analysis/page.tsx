@@ -1,4 +1,3 @@
-import { redirect } from "next/navigation";
 import { AnalysisHeader } from "@/components/analysis/AnalysisHeader";
 import { BucketsSummary } from "@/components/analysis/BucketsSummary";
 import { CategoryBreakdown } from "@/components/analysis/CategoryBreakdown";
@@ -25,6 +24,7 @@ import {
   getFinancialMonthKey,
   getFinancialMonthRange,
 } from "@/lib/finance";
+import { requireCurrentUser } from "@/lib/auth/currentUser";
 import {
   isSupabaseSchemaMissingError,
   throwIfSupabaseError,
@@ -88,14 +88,8 @@ function makeAnalysisHref(month: string, period: AnalysisPeriod) {
 
 export default async function AnalysisPage({ searchParams }: AnalysisPageProps) {
   const params = await searchParams;
+  const user = await requireCurrentUser();
   const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/login");
-  }
 
   const { data: preferencesData, error: preferencesError } = await supabase
     .from("user_preferences")

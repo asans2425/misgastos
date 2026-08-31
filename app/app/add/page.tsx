@@ -1,7 +1,7 @@
-import { redirect } from "next/navigation";
 import { TransactionDraftForm } from "@/components/forms/TransactionDraftForm";
 import { PageShell } from "@/components/ui/PageShell";
 import { formatMoney } from "@/lib/finance";
+import { requireCurrentUser } from "@/lib/auth/currentUser";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 function formatDisplayDate(value: string) {
@@ -12,14 +12,8 @@ function formatDisplayDate(value: string) {
 }
 
 export default async function AddTransactionPage() {
+  const user = await requireCurrentUser();
   const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/login");
-  }
 
   const [
     { data: accounts },

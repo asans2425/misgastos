@@ -479,7 +479,20 @@ export type Database = {
   public: {
     CompositeTypes: Record<string, never>;
     Enums: Record<string, never>;
-    Functions: Record<string, never>;
+    Functions: {
+      get_app_home_data: {
+        Args: {
+          p_selected_month?: string | null;
+        };
+        Returns: Json;
+      };
+      get_transactions_page_data: {
+        Args: {
+          p_selected_month?: string | null;
+        };
+        Returns: Json;
+      };
+    };
     Tables: PublicTables;
     Views: Record<string, never>;
   };

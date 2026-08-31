@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { CalendarClock, Layers3, PiggyBank, Repeat2 } from "lucide-react";
 import { saveMonthPreferences } from "@/app/app/settings/actions";
 import { PageShell } from "@/components/ui/PageShell";
@@ -8,6 +7,7 @@ import {
   getFinancialMonthKey,
   getFinancialMonthRange,
 } from "@/lib/finance";
+import { requireCurrentUser } from "@/lib/auth/currentUser";
 import { throwIfSupabaseError } from "@/lib/supabase/errors";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -42,14 +42,8 @@ function formatRangeDate(value: string) {
 
 export default async function SettingsPage({ searchParams }: SettingsPageProps) {
   const params = await searchParams;
+  const user = await requireCurrentUser();
   const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/login");
-  }
 
   const { data: preferences, error: preferencesError } = await supabase
     .from("user_preferences")

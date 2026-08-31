@@ -1,6 +1,6 @@
-import { redirect } from "next/navigation";
 import { RecurringItemsManager } from "@/components/settings/recurring/RecurringItemsManager";
 import { PageShell } from "@/components/ui/PageShell";
+import { requireCurrentUser } from "@/lib/auth/currentUser";
 import { getMonthKey } from "@/lib/finance";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -15,14 +15,8 @@ export default async function RecurringSettingsPage({
   searchParams,
 }: RecurringSettingsPageProps) {
   const params = await searchParams;
+  const user = await requireCurrentUser();
   const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/login");
-  }
 
   const [
     { data: accountRows },
