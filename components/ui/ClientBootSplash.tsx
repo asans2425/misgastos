@@ -5,10 +5,19 @@ import { AppSplash } from "@/components/ui/AppSplash";
 import { cn } from "@/lib/utils/cn";
 
 export function ClientBootSplash() {
-  const [visible, setVisible] = useState(true);
+  const [visible, setVisible] = useState(false);
   const [leaving, setLeaving] = useState(false);
 
   useEffect(() => {
+    if (window.sessionStorage.getItem("moneyflow-boot-splash-seen") === "1") {
+      return;
+    }
+
+    window.sessionStorage.setItem("moneyflow-boot-splash-seen", "1");
+    const showTimer = window.setTimeout(() => {
+      setVisible(true);
+    }, 0);
+
     const leaveTimer = window.setTimeout(() => {
       setLeaving(true);
     }, 950);
@@ -18,6 +27,7 @@ export function ClientBootSplash() {
     }, 1250);
 
     return () => {
+      window.clearTimeout(showTimer);
       window.clearTimeout(leaveTimer);
       window.clearTimeout(hideTimer);
     };

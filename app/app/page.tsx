@@ -16,7 +16,10 @@ import {
   formatMoney,
   formatShortMonthLabel,
 } from "@/lib/finance";
-import { throwIfSupabaseError } from "@/lib/supabase/errors";
+import {
+  isSupabaseSchemaMissingError,
+  throwIfSupabaseError,
+} from "@/lib/supabase/errors";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { cn } from "@/lib/utils/cn";
 
@@ -157,7 +160,9 @@ export default async function AppHomePage({ searchParams }: AppHomePageProps) {
   throwIfSupabaseError(subcategoriesError);
   throwIfSupabaseError(accountsError);
   throwIfSupabaseError(quickActionsError);
-  throwIfSupabaseError(bucketRowsError);
+  if (bucketRowsError && !isSupabaseSchemaMissingError(bucketRowsError)) {
+    throwIfSupabaseError(bucketRowsError);
+  }
   throwIfSupabaseError(preferencesError);
 
   const financialMonthSettings = {
@@ -189,7 +194,7 @@ export default async function AppHomePage({ searchParams }: AppHomePageProps) {
   const accounts = accountsData ?? [];
   const quickActions = quickActionsData ?? [];
   const transactionRows = transactionRowsData ?? [];
-  const bucketRows = bucketRowsData ?? [];
+  const bucketRows = bucketRowsError ? [] : (bucketRowsData ?? []);
 
   const categoriesById = new Map(categories.map((category) => [category.id, category]));
   const subcategoriesById = new Map(

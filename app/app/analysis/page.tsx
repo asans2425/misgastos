@@ -25,7 +25,10 @@ import {
   getFinancialMonthKey,
   getFinancialMonthRange,
 } from "@/lib/finance";
-import { throwIfSupabaseError } from "@/lib/supabase/errors";
+import {
+  isSupabaseSchemaMissingError,
+  throwIfSupabaseError,
+} from "@/lib/supabase/errors";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 type AnalysisPageProps = {
@@ -173,8 +176,15 @@ export default async function AnalysisPage({ searchParams }: AnalysisPageProps) 
   throwIfSupabaseError(subcategoriesError);
   throwIfSupabaseError(transactionRowsError);
   throwIfSupabaseError(recurringRowsError);
-  throwIfSupabaseError(bucketRowsError);
-  throwIfSupabaseError(bucketMovementRowsError);
+  if (bucketRowsError && !isSupabaseSchemaMissingError(bucketRowsError)) {
+    throwIfSupabaseError(bucketRowsError);
+  }
+  if (
+    bucketMovementRowsError &&
+    !isSupabaseSchemaMissingError(bucketMovementRowsError)
+  ) {
+    throwIfSupabaseError(bucketMovementRowsError);
+  }
 
   const categoriesById = new Map(
     (categoriesData ?? []).map((category) => [category.id, category]),
@@ -220,14 +230,14 @@ export default async function AnalysisPage({ searchParams }: AnalysisPageProps) 
       type: item.type,
     }),
   );
-  const buckets: AnalysisBucket[] = (bucketRowsData ?? []).map((bucket) => ({
+  const buckets: AnalysisBucket[] = (bucketRowsError ? [] : (bucketRowsData ?? [])).map((bucket) => ({
     color: bucket.color,
     currentBalance: bucket.current_balance,
     id: bucket.id,
     name: bucket.name,
   }));
   const bucketMovements: AnalysisBucketMovement[] = (
-    bucketMovementRowsData ?? []
+    bucketMovementRowsError ? [] : (bucketMovementRowsData ?? [])
   ).map((movement) => ({
     amount: movement.amount,
     bucketId: movement.bucket_id,
