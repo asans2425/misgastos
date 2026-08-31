@@ -265,12 +265,6 @@ export default async function AppHomePage({ searchParams }: AppHomePageProps) {
         </section>
       ) : null}
 
-      <MonthPickerCard
-        monthLabel={formatShortMonthLabel(monthDate)}
-        rangeLabel={`${formatRangeDate(monthRange.start)} - ${formatRangeDate(monthRange.end)}`}
-        selectedMonth={selectedMonth}
-      />
-
       <section className="rounded-lg border border-border-soft bg-surface px-3 py-2.5 shadow-sm sm:px-4">
         <div className="flex items-center justify-between gap-3">
           <div className="flex min-w-0 items-center gap-2.5">
@@ -297,6 +291,12 @@ export default async function AppHomePage({ searchParams }: AppHomePageProps) {
         </div>
       </section>
 
+      <MonthPickerCard
+        monthLabel={formatShortMonthLabel(monthDate)}
+        rangeLabel={`${formatRangeDate(monthRange.start)} - ${formatRangeDate(monthRange.end)}`}
+        selectedMonth={selectedMonth}
+      />
+
       <MonthlySnapshot
         expandedBalance={summary.expandedBalance}
         investment={summary.investment}
@@ -308,183 +308,191 @@ export default async function AppHomePage({ searchParams }: AppHomePageProps) {
 
       <QuickActionsPanel actions={quickActionItems} />
 
-        <section className="rounded-lg border border-border-soft bg-surface p-4 shadow-sm">
-          <div className="mb-4 flex items-center justify-between gap-3">
-            <div>
-              <h2 className="text-lg font-semibold text-slate-950">
-                Ultimos movimientos
-              </h2>
-              <p className="mt-1 text-sm text-slate-500">
-                Los cinco movimientos mas recientes del mes seleccionado.
-              </p>
-            </div>
-            <Link
-              className="inline-flex items-center gap-2 text-sm font-semibold text-brand transition hover:text-brand-strong"
-              href={`/app/transactions?month=${selectedMonth}`}
-            >
-              Ver todos
-              <ArrowRight aria-hidden="true" size={16} />
-            </Link>
-          </div>
-
-          {latestTransactions.length === 0 ? (
-            <div className="rounded-md border border-dashed border-border-soft px-4 py-6 text-center">
-              <p className="text-sm font-medium text-slate-600">
-                Todavía no tienes movimientos este mes.
-              </p>
-              <p className="mt-2 text-sm text-slate-500">
-                Añade tu primer gasto.
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {latestTransactions.map((transaction) => (
-                <article
-                  className="flex items-start justify-between gap-3 rounded-md border border-border-soft bg-white px-3 py-3"
-                  key={transaction.id}
-                >
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-slate-400">
-                      <CalendarDays aria-hidden="true" size={14} />
-                      {formatDisplayDate(transaction.date)}
-                    </div>
-                    <p className="mt-2 text-sm font-semibold text-slate-900">
-                      {getPrimaryLabel(transaction)}
-                    </p>
-                    <p className="mt-1 text-sm text-slate-500">
-                      {transaction.categoryName}
-                    </p>
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      {transaction.is_travel_income ? (
-                        <span className="rounded-full bg-sky-100 px-2.5 py-1 text-xs font-semibold text-sky-900">
-                          VIAJES
-                        </span>
-                      ) : null}
-                      {transaction.is_reimbursement ? (
-                        <span className="rounded-full bg-violet-100 px-2.5 py-1 text-xs font-semibold text-violet-900">
-                          Reembolso
-                        </span>
-                      ) : null}
-                      {transaction.is_investment ? (
-                        <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-900">
-                          Inversion
-                        </span>
-                      ) : null}
-                      {transaction.status === "pending" ? (
-                        <span className="rounded-full bg-orange-100 px-2.5 py-1 text-xs font-semibold text-orange-900">
-                          Pendiente
-                        </span>
-                      ) : (
-                        <span className="rounded-full bg-teal-100 px-2.5 py-1 text-xs font-semibold text-teal-900">
-                          Confirmado
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  <div className="shrink-0 text-right">
-                    <p
-                      className={cn(
-                        "text-sm font-semibold",
-                        getAmountTone(transaction.type),
-                      )}
-                    >
-                      {getSignedAmountLabel(transaction.amount, transaction.type)}
-                    </p>
-                    <p className="mt-1 text-xs font-medium uppercase tracking-wide text-slate-400">
-                      {transaction.type === "expense"
-                        ? "Gasto"
-                        : transaction.type === "income"
-                          ? "Ingreso"
-                          : "Transferencia"}
-                    </p>
-                  </div>
-                </article>
-              ))}
-            </div>
-          )}
-        </section>
-
-        <section className="rounded-lg border border-border-soft bg-surface p-4 shadow-sm">
-          <div className="mb-4 flex items-center justify-between gap-3">
-            <div>
-              <h2 className="text-lg font-semibold text-slate-950">Huchas</h2>
-              <p className="mt-1 text-sm text-slate-500">
-                Dinero apartado sin contar como gasto.
-              </p>
-            </div>
-            <Link
-              className="inline-flex items-center gap-2 text-sm font-semibold text-brand transition hover:text-brand-strong"
-              href="/app/settings/buckets"
-            >
-              Gestionar
-              <ArrowRight aria-hidden="true" size={16} />
-            </Link>
-          </div>
-
-          {bucketRows.length === 0 ? (
-            <p className="text-sm text-slate-500">
-              Crea tu primera hucha para separar objetivos como ahorros, viajes
-              o coche.
-            </p>
-          ) : (
-            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-              {bucketRows.map((bucket) => (
-                <div
-                  className="rounded-md border border-border-soft bg-white p-3"
-                  key={bucket.id}
-                >
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="truncate text-sm font-semibold text-slate-900">
-                      {bucket.name}
-                    </p>
-                    <span
-                      aria-hidden="true"
-                      className="size-5 shrink-0 rounded-full border border-border-soft"
-                      style={{ backgroundColor: bucket.color ?? "#e2e8f0" }}
-                    />
-                  </div>
-                  <p className="mt-2 text-xl font-semibold text-slate-950">
-                    {formatMoney(bucket.current_balance)}
-                  </p>
-                  {bucket.target_amount ? (
-                    <p className="mt-1 text-xs font-medium text-slate-500">
-                      Objetivo {formatMoney(bucket.target_amount)}
-                    </p>
-                  ) : null}
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
-
-        <section className="rounded-lg border border-border-soft bg-surface p-4 shadow-sm">
-          <div className="mb-4 flex items-center gap-2">
-            <ReceiptText aria-hidden="true" size={18} className="text-slate-400" />
+      <section className="rounded-lg border border-border-soft bg-surface p-4 shadow-sm">
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <div>
             <h2 className="text-lg font-semibold text-slate-950">
-              Lectura rapida del mes
+              Ultimos movimientos
             </h2>
+            <p className="mt-1 text-sm text-slate-500">
+              Los cinco movimientos mas recientes del mes seleccionado.
+            </p>
           </div>
+          <Link
+            className="inline-flex items-center gap-2 text-sm font-semibold text-brand transition hover:text-brand-strong"
+            href={`/app/transactions?month=${selectedMonth}`}
+          >
+            Ver todos
+            <ArrowRight aria-hidden="true" size={16} />
+          </Link>
+        </div>
+
+        {latestTransactions.length === 0 ? (
+          <div className="rounded-md border border-dashed border-border-soft px-4 py-6 text-center">
+            <p className="text-sm font-medium text-slate-600">
+              Todavía no tienes movimientos este mes.
+            </p>
+            <p className="mt-2 text-sm text-slate-500">
+              Añade tu primer gasto.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {latestTransactions.map((transaction) => (
+              <article
+                className="flex items-start justify-between gap-3 rounded-md border border-border-soft bg-white px-3 py-3"
+                key={transaction.id}
+              >
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-slate-400">
+                    <CalendarDays aria-hidden="true" size={14} />
+                    {formatDisplayDate(transaction.date)}
+                  </div>
+                  <p className="mt-2 text-sm font-semibold text-slate-900">
+                    {getPrimaryLabel(transaction)}
+                  </p>
+                  <p className="mt-1 text-sm text-slate-500">
+                    {transaction.categoryName}
+                  </p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {transaction.is_travel_income ? (
+                      <span className="rounded-full bg-sky-100 px-2.5 py-1 text-xs font-semibold text-sky-900">
+                        VIAJES
+                      </span>
+                    ) : null}
+                    {transaction.is_reimbursement ? (
+                      <span className="rounded-full bg-violet-100 px-2.5 py-1 text-xs font-semibold text-violet-900">
+                        Reembolso
+                      </span>
+                    ) : null}
+                    {transaction.is_investment ? (
+                      <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-900">
+                        Inversion
+                      </span>
+                    ) : null}
+                    {transaction.status === "pending" ? (
+                      <span className="rounded-full bg-orange-100 px-2.5 py-1 text-xs font-semibold text-orange-900">
+                        Pendiente
+                      </span>
+                    ) : (
+                      <span className="rounded-full bg-teal-100 px-2.5 py-1 text-xs font-semibold text-teal-900">
+                        Confirmado
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div className="shrink-0 text-right">
+                  <p
+                    className={cn(
+                      "text-sm font-semibold",
+                      getAmountTone(transaction.type),
+                    )}
+                  >
+                    {getSignedAmountLabel(transaction.amount, transaction.type)}
+                  </p>
+                  <p className="mt-1 text-xs font-medium uppercase tracking-wide text-slate-400">
+                    {transaction.type === "expense"
+                      ? "Gasto"
+                      : transaction.type === "income"
+                        ? "Ingreso"
+                        : "Transferencia"}
+                  </p>
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section className="rounded-lg border border-border-soft bg-surface p-4 shadow-sm">
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-semibold text-slate-950">Huchas</h2>
+            <p className="mt-1 text-sm text-slate-500">
+              Dinero apartado sin contar como gasto.
+            </p>
+          </div>
+          <Link
+            className="inline-flex items-center gap-2 text-sm font-semibold text-brand transition hover:text-brand-strong"
+            href="/app/settings/buckets"
+          >
+            Gestionar
+            <ArrowRight aria-hidden="true" size={16} />
+          </Link>
+        </div>
+
+        {bucketRows.length === 0 ? (
+          <p className="text-sm text-slate-500">
+            Crea tu primera hucha para separar objetivos como ahorros, viajes o
+            coche.
+          </p>
+        ) : (
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-            <div className="rounded-md bg-surface-muted p-3">
-              <p className="text-sm font-medium text-slate-500">Balance ampliado</p>
-              <p className="mt-2 text-xl font-semibold text-slate-950">
-                {formatMoney(summary.expandedBalance)}
-              </p>
-            </div>
-            <div className="rounded-md bg-surface-muted p-3">
-              <p className="text-sm font-medium text-slate-500">Gasto total</p>
-              <p className="mt-2 text-xl font-semibold text-slate-950">
-                {formatMoney(summary.totalExpenses)}
-              </p>
-            </div>
-            <div className="rounded-md bg-surface-muted p-3">
-              <p className="text-sm font-medium text-slate-500">Movimientos del mes</p>
-              <p className="mt-2 text-xl font-semibold text-slate-950">
-                {transactionRows.length}
-              </p>
-            </div>
+            {bucketRows.map((bucket) => (
+              <div
+                className="rounded-md border border-border-soft bg-white p-3"
+                key={bucket.id}
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <p className="truncate text-sm font-semibold text-slate-900">
+                    {bucket.name}
+                  </p>
+                  <span
+                    aria-hidden="true"
+                    className="size-5 shrink-0 rounded-full border border-border-soft"
+                    style={{ backgroundColor: bucket.color ?? "#e2e8f0" }}
+                  />
+                </div>
+                <p className="mt-2 text-xl font-semibold text-slate-950">
+                  {formatMoney(bucket.current_balance)}
+                </p>
+                {bucket.target_amount ? (
+                  <p className="mt-1 text-xs font-medium text-slate-500">
+                    Objetivo {formatMoney(bucket.target_amount)}
+                  </p>
+                ) : null}
+              </div>
+            ))}
           </div>
-        </section>
+        )}
+      </section>
+
+      <section className="rounded-lg border border-border-soft bg-surface p-4 shadow-sm">
+        <div className="mb-4 flex items-center gap-2">
+          <ReceiptText
+            aria-hidden="true"
+            size={18}
+            className="text-slate-400"
+          />
+          <h2 className="text-lg font-semibold text-slate-950">
+            Lectura rapida del mes
+          </h2>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="rounded-md bg-surface-muted p-3">
+            <p className="text-sm font-medium text-slate-500">
+              Balance ampliado
+            </p>
+            <p className="mt-2 text-xl font-semibold text-slate-950">
+              {formatMoney(summary.expandedBalance)}
+            </p>
+          </div>
+          <div className="rounded-md bg-surface-muted p-3">
+            <p className="text-sm font-medium text-slate-500">Gasto total</p>
+            <p className="mt-2 text-xl font-semibold text-slate-950">
+              {formatMoney(summary.totalExpenses)}
+            </p>
+          </div>
+          <div className="rounded-md bg-surface-muted p-3">
+            <p className="text-sm font-medium text-slate-500">
+              Movimientos del mes
+            </p>
+            <p className="mt-2 text-xl font-semibold text-slate-950">
+              {transactionRows.length}
+            </p>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }
