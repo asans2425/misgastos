@@ -2,11 +2,7 @@
 
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { ensureUserProfile } from "@/lib/auth/profile";
-import {
-  initializeUserData,
-  userHasInitialData,
-} from "@/lib/auth/initialization";
+import { prepareCurrentUser } from "@/lib/auth/prepareUser";
 import { isSupabaseSchemaMissingError } from "@/lib/supabase/errors";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -14,26 +10,6 @@ export type AuthFormState = {
   error?: string;
   message?: string;
 };
-
-async function prepareUserAfterLogin(userId: string) {
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
-
-  if (error || !user || user.id !== userId) {
-    throw new Error("No se ha podido validar la sesion.");
-  }
-
-  await ensureUserProfile(supabase, user);
-
-  const hasInitialData = await userHasInitialData(user.id, supabase);
-
-  if (!hasInitialData) {
-    await initializeUserData(user.id, supabase);
-  }
-}
 
 export async function authenticateWithPassword(
   _previousState: AuthFormState,
@@ -65,7 +41,7 @@ export async function authenticateWithPassword(
 
     if (data.user && data.session) {
       try {
-        await prepareUserAfterLogin(data.user.id);
+        await prepareCurrentUser();
       } catch (error) {
         if (isSupabaseSchemaMissingError(error)) {
           return {
@@ -95,7 +71,7 @@ export async function authenticateWithPassword(
   }
 
   try {
-    await prepareUserAfterLogin(data.user.id);
+    await prepareCurrentUser();
   } catch (error) {
     if (isSupabaseSchemaMissingError(error)) {
       return {
