@@ -70,7 +70,7 @@ export async function authenticateWithPassword(
         if (isSupabaseSchemaMissingError(error)) {
           return {
             error:
-              "Login correcto, pero falta aplicar la migracion SQL de Supabase.",
+              "Login correcto, pero no hemos podido preparar tu espacio. Prueba de nuevo en unos segundos.",
           };
         }
 
@@ -81,7 +81,7 @@ export async function authenticateWithPassword(
 
     return {
       message:
-        "Registro creado. Revisa tu email si Supabase pide confirmar la cuenta.",
+        "Registro creado. Revisa tu email si hace falta confirmar la cuenta.",
     };
   }
 
@@ -100,7 +100,7 @@ export async function authenticateWithPassword(
     if (isSupabaseSchemaMissingError(error)) {
       return {
         error:
-          "Login correcto, pero falta aplicar la migracion SQL de Supabase.",
+          "Login correcto, pero no hemos podido preparar tu espacio. Prueba de nuevo en unos segundos.",
       };
     }
 

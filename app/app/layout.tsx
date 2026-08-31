@@ -14,6 +14,15 @@ export const metadata: Metadata = {
   title: "App",
 };
 
+function isAdminEmail(email?: string | null) {
+  const adminEmails = (process.env.APP_ADMIN_EMAILS ?? "")
+    .split(",")
+    .map((item) => item.trim().toLowerCase())
+    .filter(Boolean);
+
+  return Boolean(email && adminEmails.includes(email.toLowerCase()));
+}
+
 export default async function PrivateAppLayout({
   children,
 }: Readonly<{
@@ -38,11 +47,29 @@ export default async function PrivateAppLayout({
     }
   } catch (error) {
     if (isSupabaseSchemaMissingError(error)) {
-      return <SupabaseSetupRequired />;
+      return <SupabaseSetupRequired isAdmin={isAdminEmail(user.email)} />;
     }
 
     throw error;
   }
 
-  return <AppShell userEmail={user.email ?? "Usuario"}>{children}</AppShell>;
+  return (
+    <AppShell
+      avatarUrl={
+        typeof user.user_metadata.avatar_url === "string"
+          ? user.user_metadata.avatar_url
+          : null
+      }
+      userEmail={user.email ?? "Usuario"}
+      userName={
+        typeof user.user_metadata.full_name === "string"
+          ? user.user_metadata.full_name
+          : typeof user.user_metadata.name === "string"
+            ? user.user_metadata.name
+            : null
+      }
+    >
+      {children}
+    </AppShell>
+  );
 }

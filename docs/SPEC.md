@@ -11,7 +11,7 @@ La app trabaja con una cuenta operativa principal y huchas:
 
 - Cuenta normal: cuenta principal donde entran ingresos y salen gastos reales.
 - Huchas: compartimentos internos para apartar dinero por objetivos, como
-  AHORROS, VIAJES, COCHE o cualquier objetivo que cree cada usuario.
+  ahorros, viajes, coche o cualquier objetivo que cree cada usuario.
 
 Mover dinero a una hucha no es un gasto y no afecta a estadisticas de gastos.
 Retirar dinero de una hucha tampoco es un ingreso. Las huchas tienen sus propios
@@ -80,9 +80,12 @@ Variables publicas:
 ```env
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
+APP_ADMIN_EMAILS=
 ```
 
 No usar `service_role` ni `sb_secret_*` en codigo de frontend.
+`APP_ADMIN_EMAILS` es opcional, server-only, y permite mostrar errores tecnicos
+solo al creador.
 
 ## Tablas
 
@@ -108,11 +111,10 @@ Cuentas:
 
 Huchas iniciales:
 
-- AHORROS
-- VIAJES
+- No se crean huchas por defecto.
 
-El seed crea categorias, subcategorias, recurrentes iniciales y acciones rapidas.
-Debe evitar duplicados.
+El seed crea categorias y subcategorias generales, y acciones rapidas iniciales.
+No crea recurrentes por defecto. Debe evitar duplicados.
 
 ## Rutas
 
@@ -128,6 +130,5 @@ Debe evitar duplicados.
 
 ## Siguiente fase sugerida
 
-- Aplicar migraciones pendientes al proyecto Supabase remoto.
 - Mejorar acciones rapidas para que sean editables desde ajustes.
 - Crear vistas reales de analisis mensual con graficos.

@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ArrowRight, CalendarDays, ReceiptText } from "lucide-react";
+import { MonthPickerCard } from "@/components/dashboard/MonthPickerCard";
 import { MonthlySnapshot } from "@/components/dashboard/MonthlySnapshot";
 import { QuickActionsPanel } from "@/components/dashboard/QuickActionsPanel";
-import { PageShell } from "@/components/ui/PageShell";
 import {
   calculateMonthlySummary,
   getFinancialMonthKey,
@@ -232,10 +232,6 @@ export default async function AppHomePage({ searchParams }: AppHomePageProps) {
         "Sin subcategoria",
       type: transaction.type,
     }));
-  const topExpenseCategories = summary.byCategory
-    .filter((category) => category.categoryName !== "Inversion")
-    .filter((category) => category.categoryName !== "Inversión")
-    .slice(0, 5);
   const quickActionItems = quickActions.map((action) => ({
     accountId: defaultAccountId,
     categoryName:
@@ -248,101 +244,29 @@ export default async function AppHomePage({ searchParams }: AppHomePageProps) {
   }));
 
   return (
-    <PageShell
-      description="Resumen mensual con movimientos reales y accesos rapidos para registrar gastos."
-      title="Resumen mensual"
-    >
-      <div className="space-y-6">
-        {params.created === "1" ? (
-          <section className="rounded-lg border border-teal-200 bg-teal-50 px-4 py-3 text-sm font-medium text-teal-800 shadow-sm">
-            Movimiento guardado correctamente.
-          </section>
-        ) : null}
-
-        <section className="rounded-lg border border-border-soft bg-surface p-4 shadow-sm">
-          <form className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <p className="text-sm font-medium text-slate-500">Mes seleccionado</p>
-              <p className="mt-1 text-lg font-semibold text-slate-950">
-                {formatMonthLabel(monthDate)}
-              </p>
-              <p className="mt-1 text-sm text-slate-500">
-                {formatRangeDate(monthRange.start)} -{" "}
-                {formatRangeDate(monthRange.end)}
-              </p>
-            </div>
-            <div className="flex flex-col gap-3 sm:flex-row">
-              <label className="block space-y-1.5">
-                <span className="text-sm font-medium text-slate-700">Mes</span>
-                <input
-                  className="h-11 rounded-md border border-border-soft bg-white px-3 text-sm outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20"
-                  defaultValue={selectedMonth}
-                  name="month"
-                  type="month"
-                />
-              </label>
-              <button
-                className="h-11 rounded-md bg-brand px-4 text-sm font-semibold text-white transition hover:bg-brand-strong"
-                type="submit"
-              >
-                Cambiar mes
-              </button>
-            </div>
-          </form>
+    <div className="space-y-4 sm:space-y-6">
+      {params.created === "1" ? (
+        <section className="rounded-lg border border-teal-200 bg-teal-50 px-4 py-3 text-sm font-medium text-teal-800 shadow-sm">
+          Movimiento guardado correctamente.
         </section>
+      ) : null}
 
-        <MonthlySnapshot
-          expandedBalance={summary.expandedBalance}
-          investment={summary.investment}
-          livingExpenses={summary.livingExpenses}
-          monthlySavings={summary.monthlySavings}
-          normalIncome={summary.normalIncome}
-          totalExpenses={summary.totalExpenses}
-        />
+      <MonthPickerCard
+        monthLabel={formatMonthLabel(monthDate)}
+        rangeLabel={`${formatRangeDate(monthRange.start)} - ${formatRangeDate(monthRange.end)}`}
+        selectedMonth={selectedMonth}
+      />
 
-        <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-          <QuickActionsPanel actions={quickActionItems} />
+      <MonthlySnapshot
+        expandedBalance={summary.expandedBalance}
+        investment={summary.investment}
+        livingExpenses={summary.livingExpenses}
+        monthlySavings={summary.monthlySavings}
+        normalIncome={summary.normalIncome}
+        totalExpenses={summary.totalExpenses}
+      />
 
-          <section className="rounded-lg border border-border-soft bg-surface p-4 shadow-sm">
-            <div className="mb-4 flex items-center justify-between gap-3">
-              <div>
-                <h2 className="text-lg font-semibold text-slate-950">
-                  Top categorias
-                </h2>
-                <p className="mt-1 text-sm text-slate-500">
-                  Gasto ordinario del mes, sin contar inversion.
-                </p>
-              </div>
-            </div>
-
-            {topExpenseCategories.length === 0 ? (
-              <p className="text-sm text-slate-500">
-                Todavia no hay gasto ordinario en este mes.
-              </p>
-            ) : (
-              <div className="space-y-3">
-                {topExpenseCategories.map((category, index) => (
-                  <div
-                    className="flex items-center justify-between gap-3 rounded-md bg-surface-muted px-3 py-3"
-                    key={`${category.categoryId ?? "null"}:${category.categoryName}`}
-                  >
-                    <div className="min-w-0">
-                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
-                        #{index + 1}
-                      </p>
-                      <p className="truncate text-sm font-semibold text-slate-900">
-                        {category.categoryName}
-                      </p>
-                    </div>
-                    <p className="shrink-0 text-sm font-semibold text-slate-900">
-                      {formatMoney(category.amount)}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
-        </div>
+      <QuickActionsPanel actions={quickActionItems} />
 
         <section className="rounded-lg border border-border-soft bg-surface p-4 shadow-sm">
           <div className="mb-4 flex items-center justify-between gap-3">
@@ -459,7 +383,8 @@ export default async function AppHomePage({ searchParams }: AppHomePageProps) {
 
           {bucketRows.length === 0 ? (
             <p className="text-sm text-slate-500">
-              Crea tu primera hucha para separar objetivos como AHORROS, VIAJES o COCHE.
+              Crea tu primera hucha para separar objetivos como ahorros, viajes
+              o coche.
             </p>
           ) : (
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
@@ -520,7 +445,6 @@ export default async function AppHomePage({ searchParams }: AppHomePageProps) {
             </div>
           </div>
         </section>
-      </div>
-    </PageShell>
+    </div>
   );
 }

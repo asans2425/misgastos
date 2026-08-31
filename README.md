@@ -47,6 +47,7 @@ Copia `.env.example` a `.env.local` y rellena los valores publicos de Supabase:
 ```env
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
+APP_ADMIN_EMAILS=
 ```
 
 `NEXT_PUBLIC_SUPABASE_URL` debe ser la URL base del proyecto, por ejemplo
@@ -54,6 +55,10 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=
 
 No uses claves `service_role` ni `sb_secret_*` en el frontend. En variables
 `NEXT_PUBLIC_*` solo debe ir una clave publica anon/publishable.
+
+`APP_ADMIN_EMAILS` es opcional y no debe llevar el prefijo `NEXT_PUBLIC_`.
+Permite que el creador vea avisos tecnicos de configuracion separados por coma,
+usando el email real con el que inicia sesion.
 
 ## Supabase
 
@@ -84,8 +89,10 @@ se ejecuta `initializeUserData(userId)`.
 
 ## Datos iniciales
 
-El seed crea `Cuenta normal`, categorias, subcategorias, recurrentes editables,
-acciones rapidas iniciales y huchas iniciales como `AHORROS` y `VIAJES`.
+El seed crea `Cuenta normal`, categorias y subcategorias generales, y acciones
+rapidas iniciales. No crea huchas ni gastos fijos por defecto: cada usuario
+puede crear sus propias huchas, ingresos fijos y gastos fijos desde
+configuracion.
 
 La pantalla `/app` muestra un dashboard mensual con movimientos reales,
 acciones rapidas de gasto, ultimos movimientos y resumen financiero.

@@ -1,16 +1,6 @@
-const travelIncomeNames = new Set([
-  "Clases Alan",
-  "Clases Liam",
-  "Clases Xavi",
-  "Webs",
-  "Ingreso extra viajes",
-]);
+const travelIncomeNames = new Set<string>();
 
-const normalIncomeNames = new Set([
-  "Profesor FP",
-  "PFI",
-  "Ingreso extra normal",
-]);
+const normalIncomeNames = new Set(["Nómina", "Nomina", "Ingreso extra"]);
 
 const investmentNames = new Set(["Aportacion mensual", "Aportación mensual"]);
 

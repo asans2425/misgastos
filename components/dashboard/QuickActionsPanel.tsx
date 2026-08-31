@@ -1,9 +1,11 @@
 "use client";
 
 import { useActionState, useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { CircleDollarSign, Loader2, X } from "lucide-react";
+import { CircleDollarSign, ListPlus, Loader2, X } from "lucide-react";
 import { createQuickExpense, type QuickExpenseState } from "@/app/app/actions";
+import { cn } from "@/lib/utils/cn";
 
 type QuickActionItem = {
   accountId: string;
@@ -16,6 +18,7 @@ type QuickActionItem = {
 
 type QuickActionsPanelProps = Readonly<{
   actions: QuickActionItem[];
+  className?: string;
 }>;
 
 const initialState: QuickExpenseState = {};
@@ -109,7 +112,7 @@ function ModalForm({
   );
 }
 
-export function QuickActionsPanel({ actions }: QuickActionsPanelProps) {
+export function QuickActionsPanel({ actions, className }: QuickActionsPanelProps) {
   const router = useRouter();
   const [activeAction, setActiveAction] = useState<QuickActionItem | null>(null);
   const [toastMessage, setToastMessage] = useState("");
@@ -126,20 +129,35 @@ export function QuickActionsPanel({ actions }: QuickActionsPanelProps) {
 
   return (
     <>
-      <section className="rounded-lg border border-border-soft bg-surface p-4 shadow-sm">
-        <div className="mb-4">
-          <h2 className="text-lg font-semibold text-slate-950">
-            Acciones rapidas
-          </h2>
-          <p className="mt-1 text-sm text-slate-500">
-            Guarda un gasto en pocos toques desde el movil.
-          </p>
+      <section
+        className={cn(
+          "rounded-lg border border-border-soft bg-surface p-3 shadow-sm",
+          className,
+        )}
+      >
+        <div className="mb-2 flex items-center justify-between gap-3">
+          <div>
+            <h2 className="text-sm font-semibold text-slate-950 sm:text-base">
+              AÑADIR GASTO RÁPIDO
+            </h2>
+            <p className="hidden text-xs text-slate-500 sm:block">
+              Toca una categoria habitual.
+            </p>
+          </div>
+          <Link
+            className="inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-md bg-brand px-3 text-xs font-semibold text-white transition hover:bg-brand-strong sm:text-sm"
+            href="/app/add"
+          >
+            <ListPlus aria-hidden="true" size={16} />
+            <span className="hidden min-[520px]:inline">Movimiento completo</span>
+            <span className="min-[520px]:hidden">Completo</span>
+          </Link>
         </div>
 
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
+        <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 sm:mx-0 sm:grid sm:grid-cols-[repeat(auto-fit,minmax(118px,1fr))] sm:overflow-visible sm:px-0">
           {actions.map((action) => (
             <button
-              className="min-h-16 rounded-lg border border-border-soft bg-white px-3 py-3 text-left text-sm font-semibold text-slate-700 transition hover:border-brand hover:bg-teal-50"
+              className="min-h-9 min-w-24 shrink-0 rounded-md border border-border-soft bg-white px-3 py-1.5 text-center text-xs font-semibold leading-tight text-slate-700 transition hover:border-brand hover:bg-teal-50 sm:min-h-10 sm:min-w-0"
               key={action.id}
               onClick={() => setActiveAction(action)}
               type="button"

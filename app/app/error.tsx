@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { AlertTriangle, RefreshCw } from "lucide-react";
-import { isSupabaseSchemaMissingError } from "@/lib/supabase/errors";
 
 type AppErrorProps = Readonly<{
   error: Error;
@@ -10,7 +9,7 @@ type AppErrorProps = Readonly<{
 }>;
 
 export default function AppError({ error, reset }: AppErrorProps) {
-  const isSchemaError = isSupabaseSchemaMissingError(error);
+  console.error(error);
 
   return (
     <main className="mx-auto flex min-h-[70vh] w-full max-w-2xl items-center px-4 py-10">
@@ -24,23 +23,11 @@ export default function AppError({ error, reset }: AppErrorProps) {
               No se han podido cargar los datos
             </h1>
             <p className="mt-2 text-sm leading-6 text-slate-600">
-              {isSchemaError
-                ? "La base de datos parece no tener aplicada alguna migracion reciente. Tus movimientos no se han borrado; la app no puede leerlos hasta que Supabase tenga el esquema actualizado."
-                : "Ha fallado una consulta al cargar esta pantalla."}
+              Ha ocurrido algo al preparar esta pantalla. Tus datos no se han
+              borrado; prueba a recargar.
             </p>
           </div>
         </div>
-
-        <pre className="mt-4 overflow-x-auto rounded-md bg-slate-950 p-3 text-xs text-white">
-          {error.message}
-        </pre>
-
-        {isSchemaError ? (
-          <div className="mt-4 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
-            Aplica las migraciones pendientes desde `supabase/migrations` en el
-            SQL Editor de Supabase y recarga la pagina.
-          </div>
-        ) : null}
 
         <div className="mt-5 flex flex-col gap-2 sm:flex-row">
           <button

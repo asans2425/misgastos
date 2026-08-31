@@ -2,7 +2,6 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { CalendarClock, Layers3, PiggyBank, Repeat2 } from "lucide-react";
 import { saveMonthPreferences } from "@/app/app/settings/actions";
-import { SettingsChecklist } from "@/components/settings/SettingsChecklist";
 import { PageShell } from "@/components/ui/PageShell";
 import {
   formatMonthLabel,
@@ -80,8 +79,8 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
 
   return (
     <PageShell
-      description="Espacio preparado para perfil, preferencias y conexion con Supabase."
-      title="Ajustes"
+      description="Personaliza tu forma de organizar gastos, ingresos y objetivos."
+      title="Mi configuración"
     >
       <div className="space-y-6">
         {statusMessage ? (
@@ -218,8 +217,6 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
             </div>
           </div>
         </section>
-
-        <SettingsChecklist />
       </div>
     </PageShell>
   );

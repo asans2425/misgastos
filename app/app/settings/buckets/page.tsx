@@ -33,21 +33,17 @@ export default async function BucketsSettingsPage({
     if (isSupabaseSchemaMissingError(error)) {
       return (
         <PageShell
-          description="Falta aplicar la migracion de huchas en Supabase."
+          description="Estamos preparando esta parte de la app."
           title="Huchas"
         >
           <section className="rounded-lg border border-amber-200 bg-amber-50 p-4 shadow-sm">
             <h2 className="text-base font-semibold text-amber-950">
-              Falta crear las tablas de huchas
+              Huchas no disponibles
             </h2>
             <p className="mt-2 text-sm leading-6 text-amber-900">
-              La app ya esta preparada, pero tu Supabase remoto todavia no tiene
-              `savings_buckets` y `bucket_movements`. Aplica esta migracion en
-              el SQL Editor de Supabase y recarga esta pagina.
+              No hemos podido cargar tus huchas en este momento. Prueba a
+              recargar en unos segundos.
             </p>
-            <code className="mt-4 block break-all rounded-md bg-amber-950 p-3 text-sm text-amber-50">
-              supabase/migrations/20260830123000_add_savings_buckets.sql
-            </code>
           </section>
         </PageShell>
       );
@@ -70,19 +66,17 @@ export default async function BucketsSettingsPage({
     if (isSupabaseSchemaMissingError(error)) {
       return (
         <PageShell
-          description="Falta aplicar la migracion de huchas en Supabase."
+          description="Estamos preparando esta parte de la app."
           title="Huchas"
         >
           <section className="rounded-lg border border-amber-200 bg-amber-50 p-4 shadow-sm">
             <h2 className="text-base font-semibold text-amber-950">
-              Falta crear las tablas de huchas
+              Huchas no disponibles
             </h2>
             <p className="mt-2 text-sm leading-6 text-amber-900">
-              Aplica la migracion de huchas en Supabase y vuelve a cargar.
+              No hemos podido cargar tus huchas en este momento. Prueba a
+              recargar en unos segundos.
             </p>
-            <code className="mt-4 block break-all rounded-md bg-amber-950 p-3 text-sm text-amber-50">
-              supabase/migrations/20260830123000_add_savings_buckets.sql
-            </code>
           </section>
         </PageShell>
       );

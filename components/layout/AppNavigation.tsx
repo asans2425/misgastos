@@ -8,10 +8,10 @@ import {
   Home,
   ListChecks,
   Settings,
-  WalletCards,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
+import { MoneyFlowLogo } from "@/components/ui/MoneyFlowLogo";
 
 type NavItem = {
   href: string;
@@ -25,7 +25,7 @@ const navItems: NavItem[] = [
   { href: "/app/transactions", icon: ListChecks, label: "Movimientos" },
   { href: "/app/add", icon: CirclePlus, label: "Anadir" },
   { href: "/app/analysis", icon: BarChart3, label: "Analisis" },
-  { href: "/app/settings", icon: Settings, label: "Ajustes" },
+  { href: "/app/settings", icon: Settings, label: "Gestion" },
 ];
 
 function isActive(pathname: string, item: NavItem) {
@@ -39,12 +39,7 @@ export function DesktopSidebar() {
 
   return (
     <aside className="hidden min-h-screen w-64 border-r border-border-soft bg-surface px-4 py-5 md:flex md:flex-col">
-      <Link className="mb-8 flex items-center gap-3 px-2" href="/app">
-        <span className="flex size-10 items-center justify-center rounded-md bg-brand text-white">
-          <WalletCards aria-hidden="true" size={22} />
-        </span>
-        <span className="text-base font-semibold">MoneyFlow Albert</span>
-      </Link>
+      <MoneyFlowLogo className="mb-8 px-2" textClassName="text-base" />
 
       <nav aria-label="Navegacion principal" className="space-y-1">
         {navItems.map((item) => {

@@ -34,10 +34,13 @@ npm run build
 ```env
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
+APP_ADMIN_EMAILS=
 ```
 
 Usar la URL base de Supabase sin `/rest/v1/`. No usar `service_role` ni
 `sb_secret_*` en frontend.
+`APP_ADMIN_EMAILS` es server-only y sirve para mostrar avisos tecnicos solo al
+creador.
 
 ## Convenciones
 

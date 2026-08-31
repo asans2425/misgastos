@@ -13,28 +13,28 @@ const accounts = [
   { name: "Cuenta normal", sort_order: 1, type: "normal" },
 ] as const;
 
-const savingsBuckets = [
-  { color: "#14b8a6", icon: "piggy-bank", name: "AHORROS", sort_order: 1 },
-  { color: "#0ea5e9", icon: "plane", name: "VIAJES", sort_order: 2 },
-] as const;
+type SeedSavingsBucket = {
+  color: string;
+  icon: string;
+  name: string;
+  sort_order: number;
+};
+
+const savingsBuckets: readonly SeedSavingsBucket[] = [];
 
 const categories = [
   { color: "#ef4444", icon: "utensils", name: "Comida / restaurantes", type: "expense" },
   { color: "#22c55e", icon: "shopping-cart", name: "Supermercado", type: "expense" },
-  { color: "#f97316", icon: "car", name: "Gasolina / coche", type: "expense" },
-  { color: "#06b6d4", icon: "dumbbell", name: "Deporte", type: "expense" },
+  { color: "#f97316", icon: "car", name: "Coche / transporte", type: "expense" },
   { color: "#a855f7", icon: "party-popper", name: "Ocio", type: "expense" },
   { color: "#0ea5e9", icon: "plane", name: "Viajes", type: "expense" },
   { color: "#64748b", icon: "home", name: "Casa", type: "expense" },
   { color: "#8b5cf6", icon: "repeat", name: "Suscripciones", type: "expense" },
-  { color: "#475569", icon: "shield", name: "Seguro", type: "expense" },
   { color: "#14b8a6", icon: "heart-pulse", name: "Salud", type: "expense" },
-  { color: "#f59e0b", icon: "paw-print", name: "Mascota", type: "expense" },
   { color: "#ec4899", icon: "shirt", name: "Ropa", type: "expense" },
   { color: "#2563eb", icon: "laptop", name: "Tecnología", type: "expense" },
   { color: "#d946ef", icon: "gift", name: "Regalos", type: "expense" },
   { color: "#0f766e", icon: "graduation-cap", name: "Formación", type: "expense" },
-  { color: "#0891b2", icon: "code", name: "Webs / proyectos", type: "expense" },
   { color: "#1d4ed8", icon: "trending-up", name: "Inversión", type: "expense" },
   { color: "#16a34a", icon: "wallet", name: "Ingresos", type: "income" },
   { color: "#b45309", icon: "receipt", name: "Impuestos", type: "expense" },
@@ -42,68 +42,62 @@ const categories = [
 ] as const;
 
 const subcategories = [
-  ["Comida / restaurantes", "Bar trabajo"],
-  ["Comida / restaurantes", "Comer con amigos"],
-  ["Comida / restaurantes", "Comer con familia"],
+  ["Comida / restaurantes", "Restaurante"],
   ["Comida / restaurantes", "Cena fuera"],
   ["Comida / restaurantes", "Café"],
   ["Comida / restaurantes", "Otros restaurantes"],
-  ["Deporte", "Pádel"],
-  ["Deporte", "Futgolf"],
-  ["Deporte", "Gimnasio"],
-  ["Deporte", "Material deportivo"],
-  ["Deporte", "Otros deporte"],
-  ["Ocio", "Discoteca"],
+  ["Supermercado", "Compra semanal"],
+  ["Supermercado", "Compra puntual"],
+  ["Coche / transporte", "Gasolina"],
+  ["Coche / transporte", "Parking"],
+  ["Coche / transporte", "Transporte público"],
+  ["Coche / transporte", "Mantenimiento"],
   ["Ocio", "Cine"],
   ["Ocio", "Concierto"],
-  ["Ocio", "Planes con amigos"],
-  ["Ocio", "Planes familia"],
+  ["Ocio", "Planes"],
   ["Ocio", "Otros ocio"],
-  ["Gasolina / coche", "Gasolina"],
-  ["Gasolina / coche", "Parking"],
-  ["Gasolina / coche", "Peajes"],
-  ["Gasolina / coche", "Mantenimiento"],
-  ["Gasolina / coche", "Otros coche"],
-  ["Ingresos", "Profesor FP"],
-  ["Ingresos", "PFI"],
-  ["Ingresos", "Clases Alan"],
-  ["Ingresos", "Clases Liam"],
-  ["Ingresos", "Clases Xavi"],
-  ["Ingresos", "Webs"],
-  ["Ingresos", "Ingreso extra normal"],
-  ["Ingresos", "Ingreso extra viajes"],
+  ["Casa", "Alquiler / hipoteca"],
+  ["Casa", "Luz"],
+  ["Casa", "Agua"],
+  ["Casa", "Internet"],
+  ["Suscripciones", "Streaming"],
+  ["Suscripciones", "Apps"],
+  ["Salud", "Farmacia"],
+  ["Salud", "Médico"],
+  ["Ropa", "Ropa"],
+  ["Tecnología", "Electrónica"],
+  ["Viajes", "Alojamiento"],
+  ["Viajes", "Transporte"],
+  ["Ingresos", "Nómina"],
+  ["Ingresos", "Ingreso extra"],
+  ["Ingresos", "Bizum recibido"],
   ["Inversión", "Aportación mensual"],
 ] as const;
 
-const travelIncomeSubcategories = new Set([
-  "Clases Alan",
-  "Clases Liam",
-  "Clases Xavi",
-  "Webs",
-  "Ingreso extra viajes",
-]);
+const travelIncomeSubcategories = new Set<string>();
 
-const recurringItems = [
-  { amount: 0, category: "Ingresos", is_travel_income: false, name: "Profesor FP", subcategory: "Profesor FP", type: "income" },
-  { amount: 0, category: "Ingresos", is_travel_income: false, name: "PFI", subcategory: "PFI", type: "income" },
-  { amount: 210, category: "Inversión", include_in_living_expenses: false, is_investment: true, name: "Inversión mensual", subcategory: "Aportación mensual", type: "expense" },
-  { amount: 4, category: "Suscripciones", name: "Spotify", type: "expense" },
-  { amount: 0, category: "Seguro", name: "Seguro", type: "expense" },
-  { amount: 0, category: "Casa", name: "Casa", type: "expense" },
-  { amount: 0, category: "Impuestos", name: "Impuestos", type: "expense" },
-] as const;
+type SeedRecurringItem = {
+  amount: number;
+  category: string;
+  include_in_living_expenses?: boolean;
+  is_investment?: boolean;
+  is_travel_income?: boolean;
+  name: string;
+  subcategory?: string;
+  type: "income" | "expense";
+};
+
+const recurringItems: readonly SeedRecurringItem[] = [];
 
 const quickActions = [
-  { category: "Comida / restaurantes", icon: "coffee", label: "Bar trabajo", subcategory: "Bar trabajo" },
-  { category: "Gasolina / coche", icon: "fuel", label: "Gasolina", subcategory: "Gasolina" },
-  { category: "Deporte", icon: "activity", label: "Pádel", subcategory: "Pádel" },
-  { category: "Deporte", icon: "flag", label: "Futgolf", subcategory: "Futgolf" },
-  { category: "Supermercado", icon: "shopping-cart", label: "Supermercado" },
-  { category: "Comida / restaurantes", icon: "utensils", label: "Comida amigos", subcategory: "Comer con amigos" },
-  { category: "Comida / restaurantes", icon: "utensils", label: "Comida familia", subcategory: "Comer con familia" },
-  { category: "Ocio", icon: "music", label: "Discoteca", subcategory: "Discoteca" },
+  { category: "Comida / restaurantes", icon: "utensils", label: "Restaurante", subcategory: "Restaurante" },
   { category: "Comida / restaurantes", icon: "coffee", label: "Café", subcategory: "Café" },
-  { category: "Tecnología", icon: "package", label: "Amazon" },
+  { category: "Supermercado", icon: "shopping-cart", label: "Supermercado" },
+  { category: "Coche / transporte", icon: "fuel", label: "Gasolina", subcategory: "Gasolina" },
+  { category: "Coche / transporte", icon: "square-parking", label: "Parking", subcategory: "Parking" },
+  { category: "Ocio", icon: "music", label: "Ocio", subcategory: "Planes" },
+  { category: "Casa", icon: "home", label: "Casa" },
+  { category: "Suscripciones", icon: "repeat", label: "Suscripción" },
   { category: "Otros", icon: "more-horizontal", label: "Otros" },
 ] as const;
 
@@ -347,6 +341,10 @@ export async function ensureDefaultSavingsBuckets(
   userId: string,
   supabaseClient?: Supabase,
 ) {
+  if (savingsBuckets.length === 0) {
+    return;
+  }
+
   const supabase = supabaseClient ?? (await createSupabaseServerClient());
   const { error } = await supabase.from("savings_buckets").upsert(
     savingsBuckets.map<TablesInsert<"savings_buckets">>((bucket) => ({

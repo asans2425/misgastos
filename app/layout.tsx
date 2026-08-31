@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { PwaRuntime } from "@/components/pwa/PwaRuntime";
+import { ClientBootSplash } from "@/components/ui/ClientBootSplash";
 import { cn } from "@/lib/utils/cn";
 import "./globals.css";
 
@@ -63,6 +64,7 @@ export default function RootLayout({
     >
       <body className="min-h-full bg-background text-foreground">
         <PwaRuntime />
+        <ClientBootSplash />
         {children}
       </body>
     </html>

@@ -1,27 +1,41 @@
 import { DesktopSidebar, MobileTabBar } from "@/components/layout/AppNavigation";
-import { LogoutButton } from "@/components/auth/LogoutButton";
+import { UserMenu } from "@/components/layout/UserMenu";
+import { MoneyFlowLogo } from "@/components/ui/MoneyFlowLogo";
 
 type AppShellProps = Readonly<{
+  avatarUrl?: string | null;
   children: React.ReactNode;
   userEmail: string;
+  userName?: string | null;
 }>;
 
-export function AppShell({ children, userEmail }: AppShellProps) {
+export function AppShell({
+  avatarUrl,
+  children,
+  userEmail,
+  userName,
+}: AppShellProps) {
   return (
     <div className="min-h-dvh bg-background md:flex">
       <DesktopSidebar />
       <div className="min-w-0 flex-1 pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-0">
-        <main className="mx-auto w-full max-w-6xl px-4 pb-5 pt-[calc(1.25rem+env(safe-area-inset-top))] sm:px-6 md:px-8 md:py-8">
-          <div className="mb-6 flex flex-col gap-3 rounded-lg border border-border-soft bg-surface p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p className="text-xs font-semibold uppercase text-slate-400">
-                Sesion activa
-              </p>
-              <p className="mt-1 break-all text-sm font-medium text-foreground">
-                {userEmail}
+        <main className="mx-auto w-full max-w-6xl px-4 pb-5 pt-[calc(0.75rem+env(safe-area-inset-top))] sm:px-6 md:px-8 md:py-8">
+          <div className="mb-4 flex items-center justify-between md:mb-6">
+            <MoneyFlowLogo
+              className="md:hidden"
+              iconClassName="size-9 rounded-lg"
+              textClassName="text-[1.05rem]"
+            />
+            <div className="hidden md:block">
+              <p className="text-sm font-medium text-slate-500">
+                Sesion iniciada como {userEmail}
               </p>
             </div>
-            <LogoutButton />
+            <UserMenu
+              avatarUrl={avatarUrl}
+              userEmail={userEmail}
+              userName={userName}
+            />
           </div>
           {children}
         </main>

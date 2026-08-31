@@ -58,7 +58,7 @@ function BucketForm({ bucket }: { bucket?: BucketItem }) {
             className="h-11 w-full rounded-md border border-border-soft bg-white px-3 text-sm outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20"
             defaultValue={bucket?.name ?? ""}
             name="name"
-            placeholder="AHORROS, VIAJES, COCHE..."
+            placeholder="Ahorros, viajes, coche..."
             required
             type="text"
           />
@@ -356,7 +356,7 @@ export function BucketsManager({
             Todavia no tienes huchas.
           </p>
           <p className="mt-2 text-sm text-slate-500">
-            Crea AHORROS, VIAJES, COCHE o lo que necesites.
+            Crea ahorros, viajes, coche o lo que necesites.
           </p>
         </section>
       ) : (

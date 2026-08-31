@@ -19,7 +19,7 @@ export function MonthlySnapshot({
   totalExpenses,
 }: MonthlySnapshotProps) {
   return (
-    <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+    <section className="grid grid-cols-2 gap-2 sm:gap-3 xl:grid-cols-3">
       <DashboardMetricCard
         accent="rose"
         helper="Gasto ordinario"
