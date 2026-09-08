@@ -1,5 +1,7 @@
 import { DesktopSidebar, MobileTabBar } from "@/components/layout/AppNavigation";
+import { ContextNavigation } from "@/components/layout/ContextNavigation";
 import { UserMenu } from "@/components/layout/UserMenu";
+import { FirstUseGuide } from "@/components/onboarding/FirstUseGuide";
 import { MoneyFlowLogo } from "@/components/ui/MoneyFlowLogo";
 
 type AppShellProps = Readonly<{
@@ -31,12 +33,16 @@ export function AppShell({
                 Sesion iniciada como {userEmail}
               </p>
             </div>
-            <UserMenu
-              avatarUrl={avatarUrl}
-              userEmail={userEmail}
-              userName={userName}
-            />
+            <div className="flex items-center gap-2">
+              <FirstUseGuide />
+              <UserMenu
+                avatarUrl={avatarUrl}
+                userEmail={userEmail}
+                userName={userName}
+              />
+            </div>
           </div>
+          <ContextNavigation />
           {children}
         </main>
       </div>

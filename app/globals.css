@@ -121,3 +121,11 @@ textarea {
 .moneyflow-splash-ring-delay {
   animation-delay: 0.45s;
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .moneyflow-wallet-loader,
+  .moneyflow-bill,
+  .moneyflow-splash-ring {
+    animation: none;
+  }
+}

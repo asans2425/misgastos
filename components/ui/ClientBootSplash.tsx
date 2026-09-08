@@ -5,31 +5,41 @@ import { AppSplash } from "@/components/ui/AppSplash";
 import { cn } from "@/lib/utils/cn";
 
 export function ClientBootSplash() {
-  const [visible, setVisible] = useState(false);
+  // Visible on the server-rendered HTML so the browser never paints a blank
+  // frame while React is starting.
+  const [visible, setVisible] = useState(true);
   const [leaving, setLeaving] = useState(false);
 
   useEffect(() => {
-    if (window.sessionStorage.getItem("moneyflow-boot-splash-seen") === "1") {
-      return;
-    }
+    let hasStartedLeaving = false;
+    let hideTimer: number | undefined;
 
-    window.sessionStorage.setItem("moneyflow-boot-splash-seen", "1");
-    const showTimer = window.setTimeout(() => {
-      setVisible(true);
-    }, 0);
-
-    const leaveTimer = window.setTimeout(() => {
+    const startLeaving = () => {
+      if (hasStartedLeaving) return;
+      hasStartedLeaving = true;
       setLeaving(true);
-    }, 950);
+      hideTimer = window.setTimeout(() => setVisible(false), 300);
+    };
 
-    const hideTimer = window.setTimeout(() => {
-      setVisible(false);
-    }, 1250);
+    const waitForApp = () => {
+      if (document.readyState === "complete") {
+        startLeaving();
+      } else {
+        window.addEventListener("load", startLeaving, { once: true });
+      }
+    };
+
+    // Keep the branded transition readable, then reveal the UI as soon as the
+    // complete page has loaded. The fallback prevents a failed asset request
+    // from leaving the splash on screen forever.
+    const leaveTimer = window.setTimeout(waitForApp, 900);
+    const fallbackTimer = window.setTimeout(startLeaving, 4000);
 
     return () => {
-      window.clearTimeout(showTimer);
       window.clearTimeout(leaveTimer);
-      window.clearTimeout(hideTimer);
+      if (hideTimer) window.clearTimeout(hideTimer);
+      window.clearTimeout(fallbackTimer);
+      window.removeEventListener("load", startLeaving);
     };
   }, []);
 
@@ -41,9 +51,10 @@ export function ClientBootSplash() {
     <div
       aria-hidden="true"
       className={cn(
-        "fixed inset-0 z-[9999] transition-opacity duration-300",
+        "fixed inset-0 z-[9999] bg-brand transition-opacity duration-300",
         leaving && "opacity-0",
       )}
+      style={{ backgroundColor: "#0f766e" }}
     >
       <AppSplash />
     </div>
