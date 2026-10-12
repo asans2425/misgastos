@@ -11,6 +11,25 @@ export type AuthFormState = {
   message?: string;
 };
 
+function getRequestOrigin(requestHeaders: Headers) {
+  const requestOrigin = requestHeaders.get("origin");
+
+  if (requestOrigin) {
+    return requestOrigin;
+  }
+
+  const forwardedHost = requestHeaders.get("x-forwarded-host");
+  const host = forwardedHost ?? requestHeaders.get("host");
+  const forwardedProto = requestHeaders.get("x-forwarded-proto")?.split(",")[0];
+  const protocol = forwardedProto ?? (host?.startsWith("localhost") ? "http" : "https");
+
+  if (host) {
+    return `${protocol}://${host}`;
+  }
+
+  return null;
+}
+
 export async function authenticateWithPassword(
   _previousState: AuthFormState,
   formData: FormData,
@@ -88,7 +107,7 @@ export async function authenticateWithPassword(
 
 export async function authenticateWithGoogle(): Promise<AuthFormState> {
   const supabase = await createSupabaseServerClient();
-  const origin = (await headers()).get("origin");
+  const origin = getRequestOrigin(await headers());
 
   if (!origin) {
     return { error: "No se ha podido preparar el login con Google." };
@@ -96,7 +115,7 @@ export async function authenticateWithGoogle(): Promise<AuthFormState> {
 
   const { data, error } = await supabase.auth.signInWithOAuth({
     options: {
-      redirectTo: `${origin}/auth/callback?next=/app`,
+      redirectTo: new URL("/auth/callback?next=/app", origin).toString(),
     },
     provider: "google",
   });
