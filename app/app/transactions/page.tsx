@@ -11,6 +11,7 @@ type TransactionsPageProps = {
     category?: string;
     deleted?: string;
     month?: string;
+    transaction?: string;
     text?: string;
     type?: string;
     updated?: string;
@@ -192,6 +193,7 @@ export default async function TransactionsPage({
           groups={groups}
           reimbursementTargets={reimbursementTargets}
           returnTo={returnTo}
+          selectedTransactionId={params.transaction}
           subcategories={subcategories}
         />
       )}

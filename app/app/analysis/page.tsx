@@ -1,12 +1,10 @@
 import { AnalysisHeader } from "@/components/analysis/AnalysisHeader";
-import { BucketsSummary } from "@/components/analysis/BucketsSummary";
 import { CategoryBreakdown } from "@/components/analysis/CategoryBreakdown";
 import { CategoryEvolutionChart } from "@/components/analysis/CategoryEvolutionChart";
 import { FixedVariableCard } from "@/components/analysis/FixedVariableCard";
 import { MonthlyTrendChart } from "@/components/analysis/MonthlyTrendChart";
 import { SavingsTrendChart } from "@/components/analysis/SavingsTrendChart";
 import { SpendingCalendar } from "@/components/analysis/SpendingCalendar";
-import { SpendingPaceCard } from "@/components/analysis/SpendingPaceCard";
 import { StatsKpiGrid } from "@/components/analysis/StatsKpiGrid";
 import { TopExpenses } from "@/components/analysis/TopExpenses";
 import {
@@ -33,6 +31,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 type AnalysisPageProps = {
   searchParams: Promise<{
+    investment?: string;
     month?: string;
     period?: string;
   }>;
@@ -46,7 +45,7 @@ type FinancialMonthSettings = {
 const allowedPeriods = new Set(["1", "3", "6", "12"]);
 
 function parsePeriod(value?: string): AnalysisPeriod {
-  return allowedPeriods.has(value ?? "") ? (value as AnalysisPeriod) : "6";
+  return allowedPeriods.has(value ?? "") ? (value as AnalysisPeriod) : "1";
 }
 
 function addMonths(month: string, amount: number) {
@@ -82,8 +81,12 @@ function buildPeriodMonths({
   });
 }
 
-function makeAnalysisHref(month: string, period: AnalysisPeriod) {
-  return `/app/analysis?month=${month}&period=${period}`;
+function makeAnalysisHref(
+  month: string,
+  period: AnalysisPeriod,
+  includeInvestment: boolean,
+) {
+  return `/app/analysis?month=${month}&period=${period}${includeInvestment ? "&investment=1" : ""}`;
 }
 
 export default async function AnalysisPage({ searchParams }: AnalysisPageProps) {
@@ -106,6 +109,7 @@ export default async function AnalysisPage({ searchParams }: AnalysisPageProps) 
   const selectedMonth =
     params.month || getFinancialMonthKey(new Date(), financialMonthSettings);
   const period = parsePeriod(params.period);
+  const includeInvestment = params.investment === "1";
   const periodCount = Number(period);
   const periodMonths = buildPeriodMonths({
     count: periodCount,
@@ -215,6 +219,22 @@ export default async function AnalysisPage({ searchParams }: AnalysisPageProps) 
       };
     },
   );
+  const investmentTransactionIds = new Set(
+    transactions
+      .filter((transaction) => transaction.type === "expense" && transaction.isInvestment)
+      .map((transaction) => transaction.id),
+  );
+  const analysisTransactions = includeInvestment
+    ? transactions
+    : transactions.filter(
+        (transaction) =>
+          !transaction.isInvestment &&
+          !(
+            transaction.isReimbursement &&
+            transaction.reimbursesTransactionId &&
+            investmentTransactionIds.has(transaction.reimbursesTransactionId)
+          ),
+      );
   const recurringItems: AnalysisRecurringItem[] = (recurringRowsData ?? []).map(
     (item) => ({
       amount: item.amount,
@@ -246,7 +266,7 @@ export default async function AnalysisPage({ searchParams }: AnalysisPageProps) 
     previousPeriodMonths,
     recurringItems,
     selectedMonth: selectedPeriodMonth,
-    transactions,
+    transactions: analysisTransactions,
   });
   const rangeLabel =
     period === "1"
@@ -263,52 +283,77 @@ export default async function AnalysisPage({ searchParams }: AnalysisPageProps) 
         currentMonthHref={makeAnalysisHref(
           getFinancialMonthKey(new Date(), financialMonthSettings),
           period,
+          includeInvestment,
         )}
+        includeInvestment={includeInvestment}
         monthLabel={formatMonthLabel(selectedMonth)}
-        nextHref={makeAnalysisHref(addMonths(selectedMonth, 1), period)}
+        nextHref={makeAnalysisHref(
+          addMonths(selectedMonth, 1),
+          period,
+          includeInvestment,
+        )}
         period={period}
-        periodHref={(nextPeriod) => makeAnalysisHref(selectedMonth, nextPeriod)}
-        previousHref={makeAnalysisHref(addMonths(selectedMonth, -1), period)}
+        periodHref={(nextPeriod) =>
+          makeAnalysisHref(selectedMonth, nextPeriod, includeInvestment)
+        }
+        previousHref={makeAnalysisHref(
+          addMonths(selectedMonth, -1),
+          period,
+          includeInvestment,
+        )}
         rangeLabel={rangeLabel}
       />
 
       <StatsKpiGrid
+        showComparison={period === "1"}
         items={[
           {
+            accent: "amber",
             invertGood: true,
             kpi: analysis.expenses,
-            title: "Gastos netos",
+            title: "Gastos",
           },
           {
+            accent: "blue",
             kpi: analysis.income,
-            title: "Ingresos reales",
+            title: "Ingresos",
           },
           {
+            accent: "teal",
             kpi: analysis.balance,
-            title: "Balance",
+            title: "Ahorrado",
           },
           {
+            accent: "violet",
             kpi: analysis.savingsRate,
-            title: "Tasa ahorro",
+            title: "% ahorrado",
             valueKind: "percent",
           },
         ]}
       />
 
-      <MonthlyTrendChart data={analysis.trend} />
+      {period !== "1" ? <MonthlyTrendChart data={analysis.trend} /> : null}
 
       <div className="grid gap-4 lg:grid-cols-2 lg:gap-6">
-        <CategoryBreakdown categories={analysis.categories} />
-        <SpendingPaceCard projection={analysis.projection} />
-        <CategoryEvolutionChart items={analysis.categoryEvolution} />
-        <FixedVariableCard fixedVariable={analysis.fixedVariable} />
-        <SpendingCalendar
-          days={analysis.dailySpending}
-          month={selectedPeriodMonth}
-        />
+        {period === "1" ? (
+          <>
+            <SpendingCalendar
+              days={analysis.dailySpending}
+              month={selectedPeriodMonth}
+            />
+            <CategoryBreakdown categories={analysis.categories} />
+            <FixedVariableCard fixedVariable={analysis.fixedVariable} />
+          </>
+        ) : (
+          <CategoryBreakdown categories={analysis.categories} />
+        )}
         <TopExpenses expenses={analysis.topExpenses} />
-        <SavingsTrendChart data={analysis.savingsTrend} />
-        <BucketsSummary buckets={analysis.buckets} />
+        {period !== "1" ? (
+          <>
+            <CategoryEvolutionChart items={analysis.categoryEvolution} />
+            <SavingsTrendChart data={analysis.savingsTrend} />
+          </>
+        ) : null}
       </div>
     </div>
   );

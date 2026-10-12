@@ -20,6 +20,7 @@ export default async function AddTransactionPage() {
     { data: categories },
     { data: subcategories },
     { data: expenseRows },
+    { data: savingsBuckets },
   ] = await Promise.all([
       supabase
         .from("accounts")
@@ -48,6 +49,12 @@ export default async function AddTransactionPage() {
         .order("date", { ascending: false })
         .order("created_at", { ascending: false })
         .limit(30),
+      supabase
+        .from("savings_buckets")
+        .select("id,name")
+        .eq("user_id", user.id)
+        .eq("is_active", true)
+        .order("sort_order", { ascending: true }),
     ]);
 
   const defaultAccountId =
@@ -95,6 +102,10 @@ export default async function AddTransactionPage() {
         defaultAccountId={defaultAccountId}
         defaultDate={today}
         reimbursementTargets={reimbursementTargets}
+        savingsBuckets={(savingsBuckets ?? []).map((bucket) => ({
+          id: bucket.id,
+          name: bucket.name,
+        }))}
         subcategories={(subcategories ?? []).map((subcategory) => ({
           categoryId: subcategory.category_id,
           id: subcategory.id,

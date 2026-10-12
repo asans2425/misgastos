@@ -37,6 +37,7 @@ export type SubcategorySummary = {
 };
 
 export type MonthlySummary = {
+  availableAfterLivingExpenses: number;
   byCategory: CategorySummary[];
   bySubcategory: SubcategorySummary[];
   expandedBalance: number;

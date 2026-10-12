@@ -13,6 +13,10 @@ import {
 import type { CategoryEvolutionItem } from "@/lib/analysis";
 import { formatMoney } from "@/lib/finance";
 
+function formatAxisValue(value: number) {
+  return String(Math.round(Number(value)));
+}
+
 export function CategoryEvolutionChart({
   items,
 }: {
@@ -90,9 +94,9 @@ export function CategoryEvolutionChart({
                 <YAxis
                   axisLine={false}
                   tick={{ fill: "#64748b", fontSize: 12 }}
-                  tickFormatter={(value) => `${Number(value) / 1000}k`}
+                  tickFormatter={formatAxisValue}
                   tickLine={false}
-                  width={34}
+                  width={56}
                 />
                 <Tooltip
                   formatter={(value) => [formatMoney(Number(value)), "Gasto"]}

@@ -279,6 +279,36 @@ export async function deleteTransaction(formData: FormData) {
     .eq("user_id", user.id)
     .single();
 
+  const { data: linkedBucketMovement } = await supabase
+    .from("bucket_movements")
+    .select("id,bucket_id,amount,type")
+    .eq("transaction_id", transactionId)
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (linkedBucketMovement?.type === "contribution") {
+    const { data: bucket } = await supabase
+      .from("savings_buckets")
+      .select("id,current_balance")
+      .eq("id", linkedBucketMovement.bucket_id)
+      .eq("user_id", user.id)
+      .single();
+
+    if (bucket) {
+      const { error: bucketError } = await supabase
+        .from("savings_buckets")
+        .update({
+          current_balance: bucket.current_balance - linkedBucketMovement.amount,
+        })
+        .eq("id", bucket.id)
+        .eq("user_id", user.id);
+
+      if (bucketError) {
+        redirect(returnTo);
+      }
+    }
+  }
+
   const { error } = await supabase
     .from("transactions")
     .delete()

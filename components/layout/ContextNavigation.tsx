@@ -14,7 +14,7 @@ const routeLabels: Record<string, string> = {
   "/app/add": "Nuevo movimiento",
   "/app/analysis": "Análisis",
   "/app/settings": "Mi configuración",
-  "/app/settings/buckets": "Huchas",
+  "/app/settings/buckets": "Patrimonio y huchas",
   "/app/settings/categories": "Categorías",
   "/app/settings/recurring": "Gastos e ingresos fijos",
   "/app/transactions": "Movimientos",

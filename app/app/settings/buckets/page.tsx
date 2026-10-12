@@ -28,7 +28,7 @@ export default async function BucketsSettingsPage({
       return (
         <PageShell
           description="Estamos preparando esta parte de la app."
-          title="Huchas"
+      title="Patrimonio y huchas"
         >
           <section className="rounded-lg border border-amber-200 bg-amber-50 p-4 shadow-sm">
             <h2 className="text-base font-semibold text-amber-950">
@@ -61,7 +61,7 @@ export default async function BucketsSettingsPage({
       return (
         <PageShell
           description="Estamos preparando esta parte de la app."
-          title="Huchas"
+          title="Patrimonio y huchas"
         >
           <section className="rounded-lg border border-amber-200 bg-amber-50 p-4 shadow-sm">
             <h2 className="text-base font-semibold text-amber-950">

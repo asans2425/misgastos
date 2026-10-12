@@ -8,6 +8,8 @@ import {
 import { MonthPickerCard } from "@/components/dashboard/MonthPickerCard";
 import { MonthlySnapshot } from "@/components/dashboard/MonthlySnapshot";
 import { QuickActionsPanel } from "@/components/dashboard/QuickActionsPanel";
+import { InvestmentToggle } from "@/components/analysis/InvestmentToggle";
+import { DeleteTransactionButton } from "@/components/transactions/DeleteTransactionButton";
 import {
   calculateMonthlySummary,
   formatMoney,
@@ -21,6 +23,7 @@ import { cn } from "@/lib/utils/cn";
 type AppHomePageProps = {
   searchParams: Promise<{
     created?: string;
+    investment?: string;
     month?: string;
   }>;
 };
@@ -114,6 +117,7 @@ export default async function AppHomePage({ searchParams }: AppHomePageProps) {
     userId: user.id,
   });
   const monthDate = new Date(`${selectedMonth}-01T00:00:00`);
+  const includeInvestment = params.investment === "1";
 
   const categoriesById = new Map(categories.map((category) => [category.id, category]));
   const subcategoriesById = new Map(
@@ -189,7 +193,10 @@ export default async function AppHomePage({ searchParams }: AppHomePageProps) {
         </section>
       ) : null}
 
-      <section className="rounded-lg border border-border-soft bg-surface px-3 py-2.5 shadow-sm sm:px-4">
+      <Link
+        className="block rounded-lg border border-border-soft bg-surface px-3 py-2.5 shadow-sm transition hover:border-brand/40 hover:shadow-md sm:px-4"
+        href={`/app/transactions?month=${selectedMonth}`}
+      >
         <div className="flex items-center justify-between gap-3">
           <div className="flex min-w-0 items-center gap-2.5">
             <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-brand/10 text-brand">
@@ -213,7 +220,7 @@ export default async function AppHomePage({ searchParams }: AppHomePageProps) {
             </p>
           </div>
         </div>
-      </section>
+      </Link>
 
       <MonthPickerCard
         monthLabel={formatShortMonthLabel(monthDate)}
@@ -221,12 +228,18 @@ export default async function AppHomePage({ searchParams }: AppHomePageProps) {
         selectedMonth={selectedMonth}
       />
 
+      <div className="flex justify-end">
+        <InvestmentToggle checked={includeInvestment} />
+      </div>
+
       <MonthlySnapshot
+        availableAfterLivingExpenses={summary.availableAfterLivingExpenses}
         expandedBalance={summary.expandedBalance}
+        includeInvestment={includeInvestment}
         investment={summary.investment}
         livingExpenses={summary.livingExpenses}
-        monthlySavings={summary.monthlySavings}
         normalIncome={summary.normalIncome}
+        travelIncome={summary.travelIncome}
         totalExpenses={summary.totalExpenses}
       />
 
@@ -264,10 +277,16 @@ export default async function AppHomePage({ searchParams }: AppHomePageProps) {
           <div className="space-y-3">
             {latestTransactions.map((transaction) => (
               <article
-                className="flex items-start justify-between gap-3 rounded-md border border-border-soft bg-white px-3 py-3"
+                className="relative rounded-md border border-border-soft bg-white px-3 py-3 transition hover:border-brand/40 hover:shadow-sm"
                 key={transaction.id}
               >
-                <div className="min-w-0">
+                <Link
+                  aria-label={`Editar ${getPrimaryLabel(transaction)}`}
+                  className="absolute inset-0 z-0 rounded-md"
+                  href={`/app/transactions?month=${selectedMonth}&transaction=${transaction.id}`}
+                />
+                <div className="relative z-10 flex items-start justify-between gap-3 pointer-events-none">
+                  <div className="min-w-0">
                   <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-slate-400">
                     <CalendarDays aria-hidden="true" size={14} />
                     {formatDisplayDate(transaction.date)}
@@ -278,7 +297,27 @@ export default async function AppHomePage({ searchParams }: AppHomePageProps) {
                   <p className="mt-1 text-sm text-slate-500">
                     {transaction.categoryName}
                   </p>
-                  <div className="mt-2 flex flex-wrap gap-2">
+                  </div>
+                  <div className="shrink-0 text-right">
+                  <p
+                    className={cn(
+                      "text-sm font-semibold",
+                      getAmountTone(transaction.type),
+                    )}
+                  >
+                    {getSignedAmountLabel(transaction.amount, transaction.type)}
+                  </p>
+                  <p className="mt-1 text-xs font-medium uppercase tracking-wide text-slate-400">
+                    {transaction.type === "expense"
+                      ? "Gasto"
+                      : transaction.type === "income"
+                        ? "Ingreso"
+                        : "Transferencia"}
+                  </p>
+                  </div>
+                </div>
+                <div className="relative z-10 mt-2 flex items-center justify-between gap-2 pointer-events-none">
+                  <div className="flex flex-wrap gap-2">
                     {transaction.is_travel_income ? (
                       <span className="rounded-full bg-sky-100 px-2.5 py-1 text-xs font-semibold text-sky-900">
                         VIAJES
@@ -304,23 +343,12 @@ export default async function AppHomePage({ searchParams }: AppHomePageProps) {
                       </span>
                     )}
                   </div>
-                </div>
-                <div className="shrink-0 text-right">
-                  <p
-                    className={cn(
-                      "text-sm font-semibold",
-                      getAmountTone(transaction.type),
-                    )}
-                  >
-                    {getSignedAmountLabel(transaction.amount, transaction.type)}
-                  </p>
-                  <p className="mt-1 text-xs font-medium uppercase tracking-wide text-slate-400">
-                    {transaction.type === "expense"
-                      ? "Gasto"
-                      : transaction.type === "income"
-                        ? "Ingreso"
-                        : "Transferencia"}
-                  </p>
+                  <div className="pointer-events-auto relative z-20 shrink-0">
+                    <DeleteTransactionButton
+                      returnTo={`/app?month=${selectedMonth}`}
+                      transactionId={transaction.id}
+                    />
+                  </div>
                 </div>
               </article>
             ))}
@@ -353,8 +381,9 @@ export default async function AppHomePage({ searchParams }: AppHomePageProps) {
         ) : (
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
             {bucketRows.map((bucket) => (
-              <div
-                className="rounded-md border border-border-soft bg-white p-3"
+              <Link
+                className="block rounded-md border border-border-soft bg-white p-3 transition hover:border-brand/40 hover:shadow-sm"
+                href="/app/settings/buckets"
                 key={bucket.id}
               >
                 <div className="flex items-center justify-between gap-3">
@@ -375,7 +404,7 @@ export default async function AppHomePage({ searchParams }: AppHomePageProps) {
                     Objetivo {formatMoney(bucket.target_amount)}
                   </p>
                 ) : null}
-              </div>
+              </Link>
             ))}
           </div>
         )}
@@ -393,14 +422,6 @@ export default async function AppHomePage({ searchParams }: AppHomePageProps) {
           </h2>
         </div>
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-          <div className="rounded-md bg-surface-muted p-3">
-            <p className="text-sm font-medium text-slate-500">
-              Balance ampliado
-            </p>
-            <p className="mt-2 text-xl font-semibold text-slate-950">
-              {formatMoney(summary.expandedBalance)}
-            </p>
-          </div>
           <div className="rounded-md bg-surface-muted p-3">
             <p className="text-sm font-medium text-slate-500">Gasto total</p>
             <p className="mt-2 text-xl font-semibold text-slate-950">

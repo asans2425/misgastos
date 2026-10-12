@@ -3,6 +3,7 @@
 import { useActionState, useMemo, useState } from "react";
 import { ArrowRight, CheckCircle2, Loader2 } from "lucide-react";
 import { createTransaction, type CreateTransactionState } from "@/app/app/add/actions";
+import { isInvestmentCategoryOrSubcategory } from "@/lib/finance/transactionRules";
 import type { AddTransactionMode } from "@/types/finance";
 
 type AccountOption = {
@@ -29,12 +30,18 @@ type ReimbursementTargetOption = {
   label: string;
 };
 
+type SavingsBucketOption = {
+  id: string;
+  name: string;
+};
+
 type TransactionDraftFormProps = Readonly<{
   accounts: AccountOption[];
   categories: CategoryOption[];
   defaultAccountId: string;
   defaultDate: string;
   reimbursementTargets: ReimbursementTargetOption[];
+  savingsBuckets: SavingsBucketOption[];
   subcategories: SubcategoryOption[];
 }>;
 
@@ -46,6 +53,7 @@ export function TransactionDraftForm({
   defaultAccountId,
   defaultDate,
   reimbursementTargets,
+  savingsBuckets,
   subcategories,
 }: TransactionDraftFormProps) {
   const [state, formAction, pending] = useActionState(
@@ -54,6 +62,8 @@ export function TransactionDraftForm({
   );
   const [type, setType] = useState<AddTransactionMode>("expense");
   const [categoryId, setCategoryId] = useState("");
+  const [isInvestment, setIsInvestment] = useState(false);
+  const [investmentBucketId, setInvestmentBucketId] = useState("");
   const [isReimbursement, setIsReimbursement] = useState(false);
   const [subcategoryId, setSubcategoryId] = useState("");
 
@@ -82,6 +92,7 @@ export function TransactionDraftForm({
     },
     [categories, subcategories],
   );
+  const isInvestmentSelected = type === "expense" && isInvestment;
 
   return (
     <form
@@ -112,6 +123,8 @@ export function TransactionDraftForm({
           }`}
           onClick={() => {
             setType("income");
+            setIsInvestment(false);
+            setInvestmentBucketId("");
             setCategoryId("");
             setSubcategoryId("");
           }}
@@ -176,6 +189,16 @@ export function TransactionDraftForm({
               onChange={(event) => {
                 setCategoryId(event.target.value);
                 setSubcategoryId("");
+                const category = categories.find(
+                  (item) => item.id === event.target.value,
+                );
+                const categoryIsInvestment = category
+                  ? isInvestmentCategoryOrSubcategory(category.name)
+                  : false;
+                setIsInvestment(categoryIsInvestment);
+                if (!categoryIsInvestment) {
+                  setInvestmentBucketId("");
+                }
               }}
               required
               value={categoryId}
@@ -209,11 +232,47 @@ export function TransactionDraftForm({
           </label>
 
           <label className="flex items-center gap-3 rounded-md border border-border-soft bg-surface-muted px-3 py-3">
-            <input className="size-4" name="isInvestment" type="checkbox" />
+            <input
+              checked={isInvestment}
+              className="size-4"
+              name="isInvestment"
+              onChange={(event) => {
+                setIsInvestment(event.target.checked);
+                if (!event.target.checked) {
+                  setInvestmentBucketId("");
+                }
+              }}
+              type="checkbox"
+            />
             <span className="text-sm font-medium text-slate-700">
               Marcar como inversion
             </span>
           </label>
+
+          {isInvestmentSelected ? (
+            <label className="block space-y-1.5 rounded-md border border-amber-200 bg-amber-50 px-3 py-3">
+              <span className="text-sm font-medium text-amber-950">
+                Hucha de inversión (opcional)
+              </span>
+              <select
+                className="h-12 w-full rounded-md border border-amber-200 bg-white px-3 text-base outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20"
+                name="investmentBucketId"
+                onChange={(event) => setInvestmentBucketId(event.target.value)}
+                value={investmentBucketId}
+              >
+                <option value="">Ninguna hucha</option>
+                {savingsBuckets.map((bucket) => (
+                  <option key={bucket.id} value={bucket.id}>
+                    {bucket.name}
+                  </option>
+                ))}
+              </select>
+              <span className="block text-xs text-amber-900">
+                Se resta de la cuenta principal y se suma a la hucha sin crear
+                otro gasto.
+              </span>
+            </label>
+          ) : null}
         </>
       ) : (
         <label className="block space-y-1.5">

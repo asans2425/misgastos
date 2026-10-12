@@ -49,6 +49,9 @@ export async function createTransaction(
   const subcategoryId = String(formData.get("subcategoryId") ?? "").trim();
   const description = String(formData.get("description") ?? "").trim();
   const isInvestment = formData.get("isInvestment") === "on";
+  const investmentBucketId = String(
+    formData.get("investmentBucketId") ?? "",
+  ).trim();
   const isReimbursement =
     type === "income" && formData.get("isReimbursement") === "on";
   const reimbursesTransactionId = String(
@@ -105,6 +108,7 @@ export async function createTransaction(
     user.id,
   );
   const transactionMonth = getFinancialMonthKey(date, financialMonthSettings);
+  let investmentBucket: { id: string; current_balance: number } | null = null;
 
   if (type === "expense") {
     const { data: category, error: categoryError } = await supabase
@@ -143,6 +147,26 @@ export async function createTransaction(
       validatedSubcategoryName,
     );
     const finalIsInvestment = isInvestment || inferredInvestment;
+
+    if (investmentBucketId && !finalIsInvestment) {
+      return { error: "La hucha de inversión solo se puede usar con inversiones." };
+    }
+
+    if (investmentBucketId && finalIsInvestment) {
+      const { data: bucket, error: bucketError } = await supabase
+        .from("savings_buckets")
+        .select("id,current_balance")
+        .eq("id", investmentBucketId)
+        .eq("user_id", user.id)
+        .eq("is_active", true)
+        .single();
+
+      if (bucketError || !bucket) {
+        return { error: "La hucha de inversión seleccionada no es valida." };
+      }
+
+      investmentBucket = bucket;
+    }
 
     payload = {
       account_id: account.id,
@@ -244,10 +268,14 @@ export async function createTransaction(
     };
   }
 
-  const { error } = await supabase.from("transactions").insert(payload);
+  const { data: createdTransaction, error } = await supabase
+    .from("transactions")
+    .insert(payload)
+    .select("id")
+    .single();
 
-  if (error) {
-    return { error: error.message };
+  if (error || !createdTransaction) {
+    return { error: error?.message ?? "No se ha podido crear el movimiento." };
   }
 
   const balanceError = await applyTransactionToAccountBalance(
@@ -258,6 +286,33 @@ export async function createTransaction(
 
   if (balanceError) {
     return { error: balanceError.message };
+  }
+
+  if (type === "expense" && payload.is_investment && investmentBucketId) {
+    const { error: movementError } = await supabase.from("bucket_movements").insert({
+      amount: payload.amount,
+      bucket_id: investmentBucketId,
+      date: payload.date,
+      description: payload.description || "Aportación para inversión",
+      month: payload.month,
+      transaction_id: createdTransaction.id,
+      type: "contribution",
+      user_id: user.id,
+    });
+
+    if (movementError) {
+      return { error: movementError.message };
+    }
+
+    const { error: bucketUpdateError } = await supabase
+      .from("savings_buckets")
+      .update({ current_balance: (investmentBucket?.current_balance ?? 0) + payload.amount })
+      .eq("id", investmentBucketId)
+      .eq("user_id", user.id);
+
+    if (bucketUpdateError) {
+      return { error: bucketUpdateError.message };
+    }
   }
 
   redirect("/app?created=1");

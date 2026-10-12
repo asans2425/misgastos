@@ -278,6 +278,7 @@ type PublicTables = {
       description: string | null;
       id: string;
       month: string;
+      transaction_id: string | null;
       type: BucketMovementType;
       updated_at: string;
       user_id: string;
@@ -290,6 +291,7 @@ type PublicTables = {
       description?: string | null;
       id?: string;
       month: string;
+      transaction_id?: string | null;
       type: BucketMovementType;
       updated_at?: string;
       user_id: string;
@@ -302,6 +304,7 @@ type PublicTables = {
       description?: string | null;
       id?: string;
       month?: string;
+      transaction_id?: string | null;
       type?: BucketMovementType;
       updated_at?: string;
       user_id?: string;

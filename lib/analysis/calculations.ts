@@ -240,6 +240,65 @@ function calculateMonthlyTrend(
   });
 }
 
+function calculatePeriodCategories(
+  periodMonths: readonly PeriodMonth[],
+  transactions: readonly AnalysisTransaction[],
+) {
+  const categories = new Map<string, CategoryAnalysis>();
+
+  for (const month of periodMonths) {
+    const monthCategories = calculateMonthSummary(month.key, transactions).categories;
+
+    for (const category of monthCategories) {
+      const categoryKey = category.categoryId ?? `name:${category.categoryName}`;
+      const current = categories.get(categoryKey) ?? {
+        amount: 0,
+        categoryColor: category.categoryColor,
+        categoryIcon: category.categoryIcon,
+        categoryId: category.categoryId,
+        categoryName: category.categoryName,
+        percent: 0,
+        subcategories: [],
+      };
+
+      current.amount = roundMoney(current.amount + category.amount);
+
+      for (const subcategory of category.subcategories) {
+        const currentSubcategory = current.subcategories.find(
+          (item) =>
+            (item.subcategoryId ?? `name:${item.subcategoryName}`) ===
+            (subcategory.subcategoryId ?? `name:${subcategory.subcategoryName}`),
+        );
+
+        if (currentSubcategory) {
+          currentSubcategory.amount = roundMoney(
+            currentSubcategory.amount + subcategory.amount,
+          );
+        } else {
+          current.subcategories.push({ ...subcategory });
+        }
+      }
+
+      categories.set(categoryKey, current);
+    }
+  }
+
+  const total = Array.from(categories.values()).reduce(
+    (sum, category) => sum + category.amount,
+    0,
+  );
+
+  return Array.from(categories.values())
+    .map((category) => ({
+      ...category,
+      percent: percent(category.amount, total),
+      subcategories: category.subcategories.sort(
+        (left, right) => right.amount - left.amount,
+      ),
+    }))
+    .sort((left, right) => right.amount - left.amount);
+}
+
 function calculateComparison(
   currentCategories: readonly CategoryAnalysis[],
   previousCategories: readonly CategoryAnalysis[],
@@ -546,9 +605,11 @@ function calculateDailySpending(
 }
 
 function calculateTopExpenses(
-  selectedMonth: PeriodMonth,
+  periodMonths: readonly PeriodMonth[],
   transactions: readonly AnalysisTransaction[],
 ) {
+  const firstMonth = periodMonths[0];
+  const lastMonth = periodMonths[periodMonths.length - 1];
   const reimbursementsByExpense = new Map<string, number>();
 
   for (const transaction of transactions) {
@@ -566,8 +627,10 @@ function calculateTopExpenses(
       (transaction) =>
         transaction.type === "expense" &&
         !transaction.isReimbursement &&
-        transaction.date >= selectedMonth.start &&
-        transaction.date <= selectedMonth.end,
+        firstMonth &&
+        lastMonth &&
+        transaction.date >= firstMonth.start &&
+        transaction.date <= lastMonth.end,
     )
     .map<TopExpense>((transaction) => ({
       amount: roundMoney(
@@ -647,10 +710,11 @@ export function calculateAnalysis({
   today?: Date;
   transactions: readonly AnalysisTransaction[];
 }): AnalysisResult {
-  const { categories, month: selectedMonthSummary } = calculateMonthSummary(
+  const selectedMonthSummary = calculateMonthSummary(
     selectedMonth.key,
     transactions,
-  );
+  ).month;
+  const categories = calculatePeriodCategories(periodMonths, transactions);
   const trend = calculateMonthlyTrend(periodMonths, transactions);
   const previousTrend = calculateMonthlyTrend(previousPeriodMonths, transactions);
   const currentPeriodSummary = trend.reduce(
@@ -721,7 +785,7 @@ export function calculateAnalysis({
     ),
     savingsTrend: trend,
     selectedMonthSummary,
-    topExpenses: calculateTopExpenses(selectedMonth, transactions),
+    topExpenses: calculateTopExpenses(periodMonths, transactions),
     trend,
   };
 }

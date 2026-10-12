@@ -86,10 +86,12 @@ export function SpendingCalendar({
       </div>
 
       <div className="mt-4 rounded-md bg-surface-muted p-3">
-        {!selected ? (
+        {!selectedDate ? (
           <p className="text-sm text-slate-500">
             Toca un día para ver sus movimientos.
           </p>
+        ) : !selected ? (
+          <p className="text-sm text-slate-500">No hay gastos este día.</p>
         ) : (
           <div>
             <div className="mb-3 flex items-center justify-between gap-3">

@@ -72,6 +72,13 @@ function PrimaryAccountCard({
   );
   const accountBalance = primaryAccount?.balance ?? 0;
   const netWorth = accountBalance + bucketTotal;
+  const [accountBalanceInput, setAccountBalanceInput] = useState(
+    String(accountBalance),
+  );
+  const [netWorthInput, setNetWorthInput] = useState(String(netWorth));
+  const [balanceMode, setBalanceMode] = useState<"account" | "netWorth">(
+    "account",
+  );
 
   return (
     <section className="rounded-lg border border-border-soft bg-surface p-4 shadow-sm">
@@ -102,31 +109,54 @@ function PrimaryAccountCard({
           <p className="text-xs font-semibold uppercase text-white/60">
             Patrimonio total
           </p>
-          <p className="mt-2 text-2xl font-semibold">
-            {formatMoney(netWorth)}
-          </p>
+          <p className="mt-2 text-2xl font-semibold">{formatMoney(netWorth)}</p>
           <p className="text-sm text-white/60">Cuenta + huchas</p>
         </div>
       </div>
 
       {primaryAccount ? (
-        <form action={formAction} className="mt-4 grid gap-3 sm:grid-cols-[1fr_auto]">
+        <form action={formAction} className="mt-4 grid gap-3 sm:grid-cols-2">
           <input name="accountId" type="hidden" value={primaryAccount.id} />
+          <input name="balanceMode" type="hidden" value={balanceMode} />
           <label className="block space-y-1.5">
             <span className="text-sm font-medium text-slate-700">
               Saldo actual en la cuenta
             </span>
             <input
               className="h-12 w-full rounded-md border border-border-soft bg-white px-3 text-base outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20"
-              defaultValue={primaryAccount.balance}
+              name="accountBalance"
               inputMode="decimal"
-              name="balance"
+              onChange={(event) => {
+                setAccountBalanceInput(event.target.value);
+                setBalanceMode("account");
+              }}
               placeholder="0,00"
+              value={accountBalanceInput}
               type="text"
             />
           </label>
+          <label className="block space-y-1.5">
+            <span className="text-sm font-medium text-slate-700">
+              Patrimonio total
+            </span>
+            <input
+              className="h-12 w-full rounded-md border border-border-soft bg-white px-3 text-base text-slate-700 outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20"
+              inputMode="decimal"
+              name="netWorth"
+              onChange={(event) => {
+                setNetWorthInput(event.target.value);
+                setBalanceMode("netWorth");
+              }}
+              placeholder="0,00"
+              value={netWorthInput}
+              type="text"
+            />
+            <span className="block text-xs text-slate-500">
+              Puedes ajustarlo para hacer pruebas. Las huchas se mantienen.
+            </span>
+          </label>
           <button
-            className="inline-flex h-12 items-center justify-center gap-2 self-end rounded-md bg-brand px-4 text-sm font-semibold text-white transition hover:bg-brand-strong disabled:opacity-70"
+            className="inline-flex h-12 items-center justify-center gap-2 rounded-md bg-brand px-4 text-sm font-semibold text-white transition hover:bg-brand-strong disabled:opacity-70 sm:col-span-2 sm:w-fit"
             disabled={pending}
             type="submit"
           >
@@ -135,7 +165,7 @@ function PrimaryAccountCard({
             ) : (
               <Save aria-hidden="true" size={18} />
             )}
-            Guardar saldo
+            Guardar cambios
           </button>
           {state.error ? (
             <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 sm:col-span-2">
@@ -143,7 +173,7 @@ function PrimaryAccountCard({
             </p>
           ) : null}
         </form>
-      ) : (
+      ) : primaryAccount ? null : (
         <p className="mt-4 rounded-md bg-surface-muted p-3 text-sm text-slate-500">
           No se ha encontrado una cuenta principal activa.
         </p>
@@ -185,6 +215,22 @@ function BucketForm({ bucket }: { bucket?: BucketItem }) {
             type="text"
           />
         </label>
+
+        {bucket ? (
+          <label className="block space-y-1.5">
+            <span className="text-sm font-medium text-slate-700">
+              Saldo actual
+            </span>
+            <input
+              className="h-11 w-full rounded-md border border-border-soft bg-white px-3 text-sm outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20"
+              defaultValue={bucket.currentBalance}
+              inputMode="decimal"
+              name="currentBalance"
+              placeholder="0,00"
+              type="text"
+            />
+          </label>
+        ) : null}
 
         <label className="block space-y-1.5">
           <span className="text-sm font-medium text-slate-700">Objetivo</span>

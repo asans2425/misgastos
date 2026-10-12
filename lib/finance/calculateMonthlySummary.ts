@@ -6,6 +6,7 @@ import type {
 } from "@/types/finance";
 
 const emptySummary: MonthlySummary = {
+  availableAfterLivingExpenses: 0,
   byCategory: [],
   bySubcategory: [],
   expandedBalance: 0,
@@ -153,6 +154,8 @@ export function calculateMonthlySummary(
   summary.totalExpenses = summary.livingExpenses + summary.investment;
   summary.monthlySavings =
     summary.normalIncome - summary.livingExpenses - summary.investment;
+  summary.availableAfterLivingExpenses =
+    summary.normalIncome + summary.travelIncome - summary.livingExpenses;
   summary.travelSavings = summary.travelIncome;
   summary.expandedBalance =
     summary.normalIncome + summary.travelIncome - summary.totalExpenses;

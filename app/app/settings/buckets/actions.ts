@@ -37,7 +37,12 @@ export async function savePrimaryAccountBalance(
 ): Promise<BucketFormState> {
   const { supabase, userId } = await getCurrentUser();
   const accountId = String(formData.get("accountId") ?? "").trim();
-  const balance = parseMoneyInput(formData.get("balance"));
+  const balanceMode = String(formData.get("balanceMode") ?? "account").trim();
+  const balance = parseMoneyInput(
+    balanceMode === "netWorth"
+      ? formData.get("netWorth")
+      : formData.get("accountBalance") ?? formData.get("balance"),
+  );
 
   if (!accountId) {
     return { error: "No se ha encontrado la cuenta principal." };
@@ -47,11 +52,36 @@ export async function savePrimaryAccountBalance(
     return { error: "Introduce el saldo actual de la cuenta." };
   }
 
+  let accountBalance = balance;
+
+  if (balanceMode === "netWorth") {
+    const { data: buckets, error: bucketsError } = await supabase
+      .from("savings_buckets")
+      .select("current_balance")
+      .eq("user_id", userId);
+
+    if (bucketsError) {
+      return { error: bucketsError.message };
+    }
+
+    const bucketTotal = (buckets ?? []).reduce(
+      (total, bucket) => total + bucket.current_balance,
+      0,
+    );
+    accountBalance = balance - bucketTotal;
+
+    if (accountBalance < 0) {
+      return {
+        error: "El patrimonio no puede ser menor que el dinero de las huchas.",
+      };
+    }
+  }
+
   const { error } = await supabase
     .from("accounts")
     .update({
-      current_balance: balance,
-      initial_balance: balance,
+      current_balance: accountBalance,
+      initial_balance: accountBalance,
     })
     .eq("id", accountId)
     .eq("user_id", userId)
@@ -77,6 +107,7 @@ export async function saveBucket(
   const color = String(formData.get("color") ?? "").trim();
   const icon = String(formData.get("icon") ?? "").trim();
   const initialBalance = parseMoneyInput(formData.get("initialBalance")) ?? 0;
+  const currentBalanceInput = parseMoneyInput(formData.get("currentBalance"));
   const targetAmount = parseMoneyInput(formData.get("targetAmount"));
   const isActive = isChecked(formData, "isActive");
 
@@ -86,6 +117,10 @@ export async function saveBucket(
 
   if (initialBalance < 0) {
     return { error: "El saldo inicial debe ser mayor o igual a 0." };
+  }
+
+  if (currentBalanceInput !== null && currentBalanceInput < 0) {
+    return { error: "El saldo actual debe ser mayor o igual a 0." };
   }
 
   if (targetAmount !== null && targetAmount < 0) {
@@ -112,7 +147,10 @@ export async function saveBucket(
 
   const payload = {
     color: color || null,
-    current_balance: initialBalance + movementBalance,
+    current_balance:
+      bucketId && currentBalanceInput !== null
+        ? currentBalanceInput
+        : initialBalance + movementBalance,
     icon: icon || null,
     initial_balance: initialBalance,
     is_active: isActive,

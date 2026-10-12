@@ -172,7 +172,7 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
               </span>
               <div className="min-w-0 flex-1">
                 <h2 className="text-base font-semibold text-slate-950">
-                  Huchas
+                  Patrimonio y huchas
                 </h2>
                 <p className="mt-1 text-sm leading-6 text-slate-500">
                   Aparta dinero para objetivos sin que cuente como gasto ni
@@ -182,7 +182,7 @@ export default async function SettingsPage({ searchParams }: SettingsPageProps) 
                   className="mt-4 inline-flex h-10 items-center justify-center rounded-md bg-sky-600 px-4 text-sm font-semibold text-white transition hover:bg-sky-700"
                   href="/app/settings/buckets"
                 >
-                  Gestionar huchas
+                  Gestionar patrimonio
                 </Link>
               </div>
             </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useMemo, useState } from "react";
+import { useActionState, useEffect, useMemo, useRef, useState } from "react";
 import { CalendarDays, Pencil, Trash2 } from "lucide-react";
 import {
   deleteTransaction,
@@ -55,6 +55,7 @@ type TransactionEditorProps = Readonly<{
   categories: CategoryOption[];
   reimbursementTargets: ReimbursementTargetOption[];
   returnTo: string;
+  selected?: boolean;
   subcategories: SubcategoryOption[];
   transaction: TransactionItem;
 }>;
@@ -64,6 +65,7 @@ type TransactionsListProps = Readonly<{
   groups: TransactionGroup[];
   reimbursementTargets: ReimbursementTargetOption[];
   returnTo: string;
+  selectedTransactionId?: string;
   subcategories: SubcategoryOption[];
 }>;
 
@@ -119,10 +121,12 @@ function TransactionEditor({
   categories,
   reimbursementTargets,
   returnTo,
+  selected = false,
   subcategories,
   transaction,
 }: TransactionEditorProps) {
-  const [isEditing, setIsEditing] = useState(false);
+  const [isEditing, setIsEditing] = useState(selected);
+  const cardRef = useRef<HTMLElement>(null);
   const [state, formAction, pending] = useActionState(
     updateTransaction,
     initialState,
@@ -148,8 +152,17 @@ function TransactionEditor({
     [categoryId, subcategories],
   );
 
+  useEffect(() => {
+    if (selected) {
+      cardRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [selected]);
+
   return (
-    <article className="rounded-lg border border-border-soft bg-surface p-4 shadow-sm">
+    <article
+      className="rounded-lg border border-border-soft bg-surface p-4 shadow-sm"
+      ref={cardRef}
+    >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-slate-400">
@@ -177,14 +190,35 @@ function TransactionEditor({
           </p>
         </div>
 
-        <button
-          className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-border-soft px-3 text-sm font-semibold text-slate-600 transition hover:bg-surface-muted"
-          onClick={() => setIsEditing((current) => !current)}
-          type="button"
-        >
-          <Pencil aria-hidden="true" size={16} />
-          Editar
-        </button>
+        <div className="flex shrink-0 items-center gap-2">
+          <button
+            className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-border-soft px-3 text-sm font-semibold text-slate-600 transition hover:bg-surface-muted"
+            onClick={() => setIsEditing((current) => !current)}
+            type="button"
+          >
+            <Pencil aria-hidden="true" size={16} />
+            Editar
+          </button>
+          <form
+            action={deleteTransaction}
+            onSubmit={(event) => {
+              if (!window.confirm("Seguro que quieres eliminar este movimiento?")) {
+                event.preventDefault();
+              }
+            }}
+          >
+            <input name="transactionId" type="hidden" value={transaction.id} />
+            <input name="returnTo" type="hidden" value={returnTo} />
+            <button
+              aria-label="Eliminar movimiento"
+              className="inline-flex size-10 items-center justify-center rounded-md border border-red-200 text-red-700 transition hover:bg-red-50"
+              title="Eliminar movimiento"
+              type="submit"
+            >
+              <Trash2 aria-hidden="true" size={16} />
+            </button>
+          </form>
+        </div>
       </div>
 
       <div className="mt-3 flex flex-wrap gap-2">
@@ -381,24 +415,6 @@ function TransactionEditor({
             </div>
           </form>
 
-          <form
-            action={deleteTransaction}
-            onSubmit={(event) => {
-              if (!window.confirm("Seguro que quieres eliminar este movimiento?")) {
-                event.preventDefault();
-              }
-            }}
-          >
-            <input name="transactionId" type="hidden" value={transaction.id} />
-            <input name="returnTo" type="hidden" value={returnTo} />
-            <button
-              className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-red-200 px-3 text-sm font-semibold text-red-700 transition hover:bg-red-50"
-              type="submit"
-            >
-              <Trash2 aria-hidden="true" size={16} />
-              Eliminar
-            </button>
-          </form>
         </div>
       ) : null}
     </article>
@@ -410,6 +426,7 @@ export function TransactionsList({
   groups,
   reimbursementTargets,
   returnTo,
+  selectedTransactionId,
   subcategories,
 }: TransactionsListProps) {
   return (
@@ -427,6 +444,7 @@ export function TransactionsList({
                 key={transaction.id}
                 reimbursementTargets={reimbursementTargets}
                 returnTo={returnTo}
+                selected={transaction.id === selectedTransactionId}
                 subcategories={subcategories}
                 transaction={transaction}
               />

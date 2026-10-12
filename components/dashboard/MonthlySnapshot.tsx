@@ -2,60 +2,70 @@ import { DashboardMetricCard } from "@/components/dashboard/DashboardMetricCard"
 import { formatMoney } from "@/lib/finance";
 
 type MonthlySnapshotProps = Readonly<{
+  availableAfterLivingExpenses: number;
   expandedBalance: number;
+  includeInvestment: boolean;
   investment: number;
   livingExpenses: number;
-  monthlySavings: number;
   normalIncome: number;
+  travelIncome: number;
   totalExpenses: number;
 }>;
 
 export function MonthlySnapshot({
+  availableAfterLivingExpenses,
   expandedBalance,
+  includeInvestment,
   investment,
   livingExpenses,
-  monthlySavings,
   normalIncome,
+  travelIncome,
   totalExpenses,
 }: MonthlySnapshotProps) {
+  const totalIncome = normalIncome + travelIncome;
+
   return (
     <section className="grid grid-cols-2 gap-2 sm:gap-3 xl:grid-cols-3">
       <DashboardMetricCard
+        accent="emerald"
+        label="Ingresos"
+        value={formatMoney(totalIncome)}
+      />
+      <DashboardMetricCard
         accent="rose"
-        helper="Gasto ordinario"
-        label="Gastado este mes"
+        label="Gastado"
         value={formatMoney(livingExpenses)}
       />
-      <DashboardMetricCard
-        accent="teal"
-        helper="Ingresos menos gastos"
-        label="Ahorro del mes"
-        value={formatMoney(monthlySavings)}
-      />
-      <DashboardMetricCard
-        accent="amber"
-        helper="No cuenta como gasto ordinario"
-        label="Inversion del mes"
-        value={formatMoney(investment)}
-      />
-      <DashboardMetricCard
-        accent="emerald"
-        helper="Todo entra en cuenta principal"
-        label="Ingresos"
-        value={formatMoney(normalIncome)}
-      />
-      <DashboardMetricCard
-        accent="slate"
-        helper="Gasto ordinario e inversion"
-        label="Gastos totales"
-        value={formatMoney(totalExpenses)}
-      />
-      <DashboardMetricCard
-        accent="blue"
-        helper="Resultado global"
-        label="Balance del mes"
-        value={formatMoney(expandedBalance)}
-      />
+      {includeInvestment ? (
+        <>
+          <DashboardMetricCard
+            accent="amber"
+            label="Inversión"
+            value={formatMoney(investment)}
+          />
+          <DashboardMetricCard
+            accent="teal"
+            label="Balance con inversión"
+            value={formatMoney(expandedBalance)}
+          />
+          <DashboardMetricCard
+            accent="blue"
+            label="Balance sin inversión"
+            value={formatMoney(availableAfterLivingExpenses)}
+          />
+          <DashboardMetricCard
+            accent="slate"
+            label="Gastos totales"
+            value={formatMoney(totalExpenses)}
+          />
+        </>
+      ) : (
+        <DashboardMetricCard
+          accent="teal"
+          label="Balance"
+          value={formatMoney(availableAfterLivingExpenses)}
+        />
+      )}
     </section>
   );
 }

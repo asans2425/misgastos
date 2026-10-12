@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { AnalysisPeriod } from "@/lib/analysis";
 import { cn } from "@/lib/utils/cn";
+import { InvestmentToggle } from "@/components/analysis/InvestmentToggle";
 
 const periodItems: Array<{ label: string; value: AnalysisPeriod }> = [
   { label: "Mes", value: "1" },
@@ -12,6 +13,7 @@ const periodItems: Array<{ label: string; value: AnalysisPeriod }> = [
 
 type AnalysisHeaderProps = Readonly<{
   currentMonthHref: string;
+  includeInvestment: boolean;
   monthLabel: string;
   nextHref: string;
   period: AnalysisPeriod;
@@ -22,6 +24,7 @@ type AnalysisHeaderProps = Readonly<{
 
 export function AnalysisHeader({
   currentMonthHref,
+  includeInvestment,
   monthLabel,
   nextHref,
   period,
@@ -75,6 +78,14 @@ export function AnalysisHeader({
             {item.label}
           </Link>
         ))}
+      </div>
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+        <p className="text-xs text-slate-500">
+          {includeInvestment
+            ? "La inversión está incluida en los gastos."
+            : "La inversión queda fuera de los gastos."}
+        </p>
+        <InvestmentToggle checked={includeInvestment} />
       </div>
     </section>
   );
