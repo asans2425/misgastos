@@ -25,7 +25,7 @@ export function MonthlySnapshot({
   const totalIncome = normalIncome + travelIncome;
 
   return (
-    <section className="grid grid-cols-2 gap-2 sm:gap-3 xl:grid-cols-3">
+    <section className="grid min-w-0 grid-cols-3 gap-1.5 sm:gap-3">
       <DashboardMetricCard
         accent="emerald"
         label="Ingresos"

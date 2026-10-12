@@ -25,14 +25,14 @@ export function DashboardMetricCard({
   return (
     <article
       className={cn(
-        "rounded-lg border p-3 shadow-sm sm:p-5",
+        "min-w-0 overflow-hidden rounded-lg border p-2 shadow-sm sm:p-5",
         accents[accent],
       )}
     >
-      <p className="text-xs font-semibold uppercase text-current opacity-70 sm:text-sm sm:normal-case">
+      <p className="truncate text-[10px] font-semibold uppercase leading-tight text-current opacity-70 sm:text-sm sm:normal-case">
         {label}
       </p>
-      <p className="mt-2 text-lg font-semibold tracking-tight sm:mt-3 sm:text-3xl">
+      <p className="mt-1 truncate text-sm font-semibold tracking-tight sm:mt-3 sm:text-3xl">
         {value}
       </p>
       {helper ? (
