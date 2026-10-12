@@ -56,6 +56,7 @@ export function DesktopSidebar() {
               )}
               href={item.href}
               key={item.href}
+              prefetch
             >
               <Icon aria-hidden="true" size={19} />
               {item.label}
@@ -89,6 +90,7 @@ export function MobileTabBar() {
               )}
               href={item.href}
               key={item.href}
+              prefetch
             >
               <Icon
                 aria-hidden="true"

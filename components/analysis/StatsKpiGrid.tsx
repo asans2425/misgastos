@@ -60,14 +60,31 @@ function TrendIcon({
 }
 
 export function StatsKpiGrid({
+  columns = 4,
+  fill = false,
   items,
   showComparison = true,
 }: {
+  columns?: 1 | 2 | 4;
+  fill?: boolean;
   items: readonly KpiItem[];
   showComparison?: boolean;
 }) {
   return (
-    <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+    <section
+      className={cn(
+        "grid gap-3",
+        columns === 1
+          ? "grid-cols-1"
+          : columns === 4
+            ? "grid-cols-2 lg:grid-cols-4"
+            : "grid-cols-2 lg:grid-cols-2",
+        fill &&
+          (columns === 1
+            ? "lg:h-full lg:grid-rows-4"
+            : "lg:h-full lg:grid-rows-2"),
+      )}
+    >
       {items.map((item) => {
         const trendIsGood =
           item.kpi.trend === "flat" ||
@@ -86,6 +103,7 @@ export function StatsKpiGrid({
             className={cn(
               "rounded-lg border p-3 shadow-sm sm:p-4",
               accent,
+              fill && "lg:flex lg:h-full lg:flex-col lg:justify-center",
             )}
             key={item.title}
           >

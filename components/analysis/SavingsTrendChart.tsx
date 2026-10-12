@@ -40,7 +40,7 @@ export function SavingsTrendChart({
       : 0;
 
   return (
-    <section className="rounded-lg border border-border-soft bg-surface p-4 shadow-sm lg:col-span-2">
+    <section className="rounded-lg border border-border-soft bg-surface p-4 shadow-sm">
       <div className="mb-4">
         <h2 className="text-lg font-semibold text-slate-950">Ahorro</h2>
         <p className="text-sm text-slate-500">

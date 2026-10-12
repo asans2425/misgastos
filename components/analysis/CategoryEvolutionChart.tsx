@@ -29,7 +29,7 @@ export function CategoryEvolutionChart({
   );
 
   return (
-    <section className="rounded-lg border border-border-soft bg-surface p-4 shadow-sm lg:col-span-2">
+    <section className="rounded-lg border border-border-soft bg-surface p-4 shadow-sm">
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h2 className="text-lg font-semibold text-slate-950">

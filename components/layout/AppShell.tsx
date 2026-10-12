@@ -3,6 +3,7 @@ import { ContextNavigation } from "@/components/layout/ContextNavigation";
 import { UserMenu } from "@/components/layout/UserMenu";
 import { FirstUseGuide } from "@/components/onboarding/FirstUseGuide";
 import { MoneyFlowLogo } from "@/components/ui/MoneyFlowLogo";
+import { PageTransition } from "@/components/layout/PageTransition";
 
 type AppShellProps = Readonly<{
   avatarUrl?: string | null;
@@ -43,7 +44,7 @@ export function AppShell({
             </div>
           </div>
           <ContextNavigation />
-          {children}
+          <PageTransition>{children}</PageTransition>
         </main>
       </div>
       <MobileTabBar />

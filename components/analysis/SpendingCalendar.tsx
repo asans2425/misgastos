@@ -45,7 +45,7 @@ export function SpendingCalendar({
   const selected = selectedDate ? dailyByDate.get(selectedDate) : null;
 
   return (
-    <section className="rounded-lg border border-border-soft bg-surface p-4 shadow-sm lg:col-span-2">
+    <section className="rounded-lg border border-border-soft bg-surface p-4 shadow-sm">
       <h2 className="text-lg font-semibold text-slate-950">Calendario de gasto</h2>
       <p className="text-sm text-slate-500">
         Intensidad por día dentro del ciclo seleccionado.

@@ -276,6 +276,30 @@ export default async function AnalysisPage({ searchParams }: AnalysisPageProps) 
       : `${formatRangeDate(periodMonths[0].start)} - ${formatRangeDate(
           selectedPeriodMonth.end,
         )}`;
+  const kpiItems = [
+    {
+      accent: "amber" as const,
+      invertGood: true,
+      kpi: analysis.expenses,
+      title: "Gastos",
+    },
+    {
+      accent: "blue" as const,
+      kpi: analysis.income,
+      title: "Ingresos",
+    },
+    {
+      accent: "teal" as const,
+      kpi: analysis.balance,
+      title: "Ahorrado",
+    },
+    {
+      accent: "violet" as const,
+      kpi: analysis.savingsRate,
+      title: "% ahorrado",
+      valueKind: "percent" as const,
+    },
+  ];
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -293,9 +317,12 @@ export default async function AnalysisPage({ searchParams }: AnalysisPageProps) 
           includeInvestment,
         )}
         period={period}
-        periodHref={(nextPeriod) =>
-          makeAnalysisHref(selectedMonth, nextPeriod, includeInvestment)
-        }
+        periodHrefs={{
+          "1": makeAnalysisHref(selectedMonth, "1", includeInvestment),
+          "3": makeAnalysisHref(selectedMonth, "3", includeInvestment),
+          "6": makeAnalysisHref(selectedMonth, "6", includeInvestment),
+          "12": makeAnalysisHref(selectedMonth, "12", includeInvestment),
+        }}
         previousHref={makeAnalysisHref(
           addMonths(selectedMonth, -1),
           period,
@@ -304,35 +331,14 @@ export default async function AnalysisPage({ searchParams }: AnalysisPageProps) 
         rangeLabel={rangeLabel}
       />
 
-      <StatsKpiGrid
-        showComparison={period === "1"}
-        items={[
-          {
-            accent: "amber",
-            invertGood: true,
-            kpi: analysis.expenses,
-            title: "Gastos",
-          },
-          {
-            accent: "blue",
-            kpi: analysis.income,
-            title: "Ingresos",
-          },
-          {
-            accent: "teal",
-            kpi: analysis.balance,
-            title: "Ahorrado",
-          },
-          {
-            accent: "violet",
-            kpi: analysis.savingsRate,
-            title: "% ahorrado",
-            valueKind: "percent",
-          },
-        ]}
-      />
-
-      {period !== "1" ? <MonthlyTrendChart data={analysis.trend} /> : null}
+      {period === "1" ? (
+        <StatsKpiGrid items={kpiItems} />
+      ) : (
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,4fr)] lg:items-start lg:gap-6">
+          <StatsKpiGrid columns={1} fill items={kpiItems} showComparison={false} />
+          <MonthlyTrendChart data={analysis.trend} />
+        </div>
+      )}
 
       <div className="grid gap-4 lg:grid-cols-2 lg:gap-6">
         {period === "1" ? (
