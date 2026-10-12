@@ -51,12 +51,12 @@ export function MonthlySnapshot({
           />
           <DashboardMetricCard
             accent="teal"
-            label="Balance con inversión"
+            label="Ahorro con inversión"
             value={formatMoney(expandedBalance)}
           />
           <DashboardMetricCard
             accent="blue"
-            label="Balance sin inversión"
+            label="Ahorro sin inversión"
             value={formatMoney(availableAfterLivingExpenses)}
           />
           <DashboardMetricCard
@@ -68,7 +68,7 @@ export function MonthlySnapshot({
       ) : (
         <DashboardMetricCard
           accent="teal"
-          label="Balance"
+          label="Ahorro"
           value={formatMoney(availableAfterLivingExpenses)}
         />
       )}
