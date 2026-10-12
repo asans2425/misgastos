@@ -1,5 +1,6 @@
 import { DashboardMetricCard } from "@/components/dashboard/DashboardMetricCard";
 import { formatMoney } from "@/lib/finance";
+import { cn } from "@/lib/utils/cn";
 
 type MonthlySnapshotProps = Readonly<{
   availableAfterLivingExpenses: number;
@@ -25,7 +26,12 @@ export function MonthlySnapshot({
   const totalIncome = normalIncome + travelIncome;
 
   return (
-    <section className="grid min-w-0 grid-cols-3 gap-1.5 sm:gap-3">
+    <section
+      className={cn(
+        "grid min-w-0 gap-1.5 sm:gap-3",
+        includeInvestment ? "grid-cols-2 sm:grid-cols-3" : "grid-cols-3",
+      )}
+    >
       <DashboardMetricCard
         accent="emerald"
         label="Ingresos"
