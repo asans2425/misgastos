@@ -29,10 +29,10 @@ export default function manifest(): MetadataRoute.Manifest {
     ],
     id: "/app",
     lang: "es",
-    name: "MoneyFlow Albert",
+    name: "Money Flow ARSA",
     orientation: "portrait",
     scope: "/",
-    short_name: "MoneyFlow",
+    short_name: "Money Flow ARSA",
     start_url: "/app",
     theme_color: "#0f766e",
   };

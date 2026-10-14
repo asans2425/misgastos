@@ -52,7 +52,7 @@ export default async function CategoriesSettingsPage({
 
   return (
     <PageShell
-      description="Personaliza categorias y subcategorias para adaptar MoneyFlow a cualquier persona."
+      description="Personaliza categorias y subcategorias para adaptar Money Flow ARSA a cualquier persona."
       title="Categorias"
     >
       <CategoriesManager

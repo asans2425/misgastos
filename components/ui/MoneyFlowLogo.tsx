@@ -29,7 +29,7 @@ export function MoneyFlowLogo({
           textClassName,
         )}
       >
-        MoneyFlow
+        Money Flow ARSA
       </span>
     </Link>
   );

@@ -1,8 +1,8 @@
-# MoneyFlow Albert - SPEC
+# Money Flow ARSA - SPEC
 
 ## Vision
 
-MoneyFlow Albert es una app personal de finanzas para registrar gastos e
+Money Flow ARSA es una app personal de finanzas para registrar gastos e
 ingresos con rapidez desde el movil y revisar el estado del mes.
 
 ## Concepto financiero

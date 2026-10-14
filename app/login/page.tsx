@@ -24,7 +24,7 @@ export default async function LoginPage() {
           </div>
           <div>
             <h1 className="text-xl font-semibold tracking-tight">
-              MoneyFlow Albert
+              Money Flow ARSA
             </h1>
             <p className="text-sm text-slate-500">Acceso privado</p>
           </div>

@@ -22,7 +22,7 @@ export function SupabaseSetupRequired({
             </h1>
             <p className="mt-1 text-sm leading-6 text-slate-500">
               {isAdmin
-                ? "La sesion funciona, pero la base remota todavia no tiene las tablas de MoneyFlow Albert. Aplica la migracion inicial y vuelve a entrar en la app."
+                ? "La sesion funciona, pero la base remota todavia no tiene las tablas de Money Flow ARSA. Aplica la migracion inicial y vuelve a entrar en la app."
                 : "No hemos podido cargar la configuracion de la app en este momento. Prueba a recargar en unos segundos."}
             </p>
           </div>

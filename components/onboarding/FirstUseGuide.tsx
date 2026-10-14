@@ -27,14 +27,14 @@ const STORAGE_KEY = "moneyflow-first-use-guide-v2";
 
 const steps: GuideStep[] = [
   {
-    description: "MoneyFlow Albert te ayuda a registrar lo que entra y sale de tu cuenta, separar dinero en huchas y entender cómo evoluciona tu ahorro.",
+    description: "Money Flow ARSA te ayuda a registrar lo que entra y sale de tu cuenta, separar dinero en huchas y entender cómo evoluciona tu ahorro.",
     icon: Sparkles,
     tips: [
       "Puedes entrar con email y contraseña o con Google si está configurado.",
       "Los importes se guardan siempre como cantidades positivas.",
       "La guía se puede volver a abrir desde el icono de ayuda.",
     ],
-    title: "Bienvenido a MoneyFlow Albert",
+    title: "Bienvenido a Money Flow ARSA",
   },
   {
     description: "Antes de registrar datos, dedica unos minutos a adaptar la app. Así las listas y estadísticas tendrán sentido para tu vida real.",

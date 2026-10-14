@@ -62,7 +62,7 @@ export function LoginForm() {
             autoComplete="email"
             className="h-11 w-full rounded-md border border-border-soft bg-white px-3 text-sm outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/20"
             name="email"
-            placeholder="albert@example.com"
+            placeholder="tu@email.com"
             required
             type="email"
           />

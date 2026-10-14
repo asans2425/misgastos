@@ -16,15 +16,15 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  applicationName: "MoneyFlow Albert",
+  applicationName: "Money Flow ARSA",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "MoneyFlow",
+    title: "Money Flow ARSA",
   },
   title: {
-    default: "MoneyFlow Albert",
-    template: "%s | MoneyFlow Albert",
+    default: "Money Flow ARSA",
+    template: "%s | Money Flow ARSA",
   },
   description: "App personal de finanzas mobile-first.",
   formatDetection: {
