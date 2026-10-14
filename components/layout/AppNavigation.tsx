@@ -50,9 +50,10 @@ export function DesktopSidebar() {
             <Link
               aria-current={active ? "page" : undefined}
               className={cn(
-                "flex h-11 items-center gap-3 rounded-md px-3 text-sm font-medium text-slate-600 transition",
-                "hover:bg-surface-muted hover:text-foreground",
-                active && "bg-brand text-white hover:bg-brand hover:text-white",
+                "flex h-11 items-center gap-3 rounded-md px-3 text-sm font-medium transition",
+                active
+                  ? "bg-brand text-white hover:bg-brand hover:text-white"
+                  : "text-slate-600 hover:bg-surface-muted hover:text-foreground",
               )}
               href={item.href}
               key={item.href}
