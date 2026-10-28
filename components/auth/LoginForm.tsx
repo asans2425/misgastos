@@ -1,12 +1,13 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { ArrowRight, CircleUserRound, Loader2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, CircleUserRound, Loader2 } from "lucide-react";
 import {
   authenticateWithGoogle,
   authenticateWithPassword,
   type AuthFormState,
 } from "@/app/login/actions";
+import { PasswordResetRequest } from "@/components/auth/PasswordResetRequest";
 
 const initialState: AuthFormState = {};
 
@@ -20,10 +21,42 @@ export function LoginForm() {
     authenticateWithGoogle,
     initialState,
   );
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
   const isRegister = mode === "register";
+
+  if (isResettingPassword) {
+    return (
+      <div className="space-y-4">
+        <div>
+          <h2 className="text-base font-semibold text-slate-950">
+            Recuperar acceso
+          </h2>
+          <p className="mt-1 text-sm leading-6 text-slate-500">
+            Crea una contraseña para esta misma cuenta, sin depender de la cuenta
+            de Google del dispositivo.
+          </p>
+        </div>
+        <PasswordResetRequest />
+        <button
+          className="inline-flex items-center gap-2 text-sm font-semibold text-slate-500 hover:text-slate-700"
+          onClick={() => setIsResettingPassword(false)}
+          type="button"
+        >
+          <ArrowLeft aria-hidden="true" size={16} />
+          Volver
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
+      <p className="text-sm leading-6 text-slate-500">
+        Puedes entrar con Google o crear una cuenta con tu propio email y
+        contraseña. Para compartir una cuenta que ya usa Google, utiliza el
+        mismo email en «He olvidado mi contraseña»; la contraseña de Gmail no se
+        utiliza aquí.
+      </p>
       <form action={googleFormAction}>
         <button
           className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-md border border-border-soft bg-white px-4 text-sm font-semibold text-slate-700 transition hover:bg-surface-muted disabled:cursor-not-allowed disabled:opacity-70"
@@ -105,6 +138,16 @@ export function LoginForm() {
           )}
           {isRegister ? "Crear cuenta" : "Entrar"}
         </button>
+
+        {!isRegister ? (
+          <button
+            className="w-full text-sm font-semibold text-brand transition hover:text-brand-strong"
+            onClick={() => setIsResettingPassword(true)}
+            type="button"
+          >
+            He olvidado mi contraseña / entrar sin Google
+          </button>
+        ) : null}
 
         <button
           className="h-10 w-full rounded-md border border-border-soft px-4 text-sm font-semibold text-slate-600 transition hover:bg-surface-muted"

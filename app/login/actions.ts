@@ -11,6 +11,35 @@ export type AuthFormState = {
   message?: string;
 };
 
+function getAuthErrorMessage(error: { message?: string; code?: string }) {
+  const message = error.message?.toLowerCase() ?? "";
+
+  if (
+    error.code === "invalid_credentials" ||
+    message.includes("invalid login credentials")
+  ) {
+    return "Email o contraseña incorrectos. Si esta cuenta se creó con Google, usa la recuperación de contraseña para añadir una contraseña propia.";
+  }
+
+  if (
+    error.code === "email_not_confirmed" ||
+    message.includes("email not confirmed")
+  ) {
+    return "Confirma primero el email que te hemos enviado y vuelve a intentarlo.";
+  }
+
+  if (
+    error.code === "user_already_exists" ||
+    error.code === "email_exists" ||
+    message.includes("already registered") ||
+    message.includes("already been registered")
+  ) {
+    return "Ese email ya está registrado. Inicia sesión o usa la recuperación de contraseña.";
+  }
+
+  return error.message ?? "No se ha podido completar la operación.";
+}
+
 function getRequestOrigin(requestHeaders: Headers) {
   const requestOrigin = requestHeaders.get("origin");
 
@@ -55,7 +84,17 @@ export async function authenticateWithPassword(
     });
 
     if (error) {
-      return { error: error.message };
+      return { error: getAuthErrorMessage(error) };
+    }
+
+    // Supabase intentionally returns an obfuscated user for an existing
+    // OAuth/email account instead of exposing whether the email is registered.
+    // Do not report a false successful registration in that case.
+    if (data.user && (data.user.identities?.length ?? 0) === 0) {
+      return {
+        error:
+          "Ese email ya está asociado a una cuenta. Usa «He olvidado mi contraseña / entrar sin Google» para añadir la contraseña a esa misma cuenta.",
+      };
     }
 
     if (data.user && data.session) {
@@ -86,7 +125,11 @@ export async function authenticateWithPassword(
   });
 
   if (error || !data.user) {
-    return { error: error?.message ?? "No se ha podido iniciar sesion." };
+    return {
+      error: error
+        ? getAuthErrorMessage(error)
+        : "No se ha podido iniciar sesión.",
+    };
   }
 
   try {
@@ -103,6 +146,40 @@ export async function authenticateWithPassword(
   }
 
   redirect("/app");
+}
+
+export async function sendPasswordReset(
+  _previousState: AuthFormState,
+  formData: FormData,
+): Promise<AuthFormState> {
+  const email = String(formData.get("email") ?? "").trim();
+
+  if (!email) {
+    return { error: "Introduce el email de tu cuenta." };
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const origin = getRequestOrigin(await headers());
+
+  if (!origin) {
+    return { error: "No se ha podido preparar la recuperación." };
+  }
+
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: new URL(
+      "/auth/callback?next=/reset-password",
+      origin,
+    ).toString(),
+  });
+
+  if (error) {
+    return { error: getAuthErrorMessage(error) };
+  }
+
+  return {
+    message:
+      "Si existe una cuenta con ese email, recibirás un enlace para crear tu contraseña.",
+  };
 }
 
 export async function authenticateWithGoogle(): Promise<AuthFormState> {

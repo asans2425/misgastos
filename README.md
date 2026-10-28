@@ -80,9 +80,13 @@ propios datos.
 
 ## Auth
 
-`/login` permite login y registro con email/password y login con Google si el
-provider esta configurado en Supabase. Las rutas bajo `/app` estan protegidas:
-sin sesion redirigen a `/login`.
+`/login` permite registro y acceso con un email y una contraseña propia, además
+de login con Google si el provider está configurado en Supabase. La contraseña
+de Gmail no se usa para el acceso por email. Si una cuenta empezó con Google,
+puede crear una contraseña desde «He olvidado mi contraseña / entrar sin
+Google» usando el mismo email; así Google y email/contraseña acceden al mismo
+usuario. Las rutas bajo `/app` están protegidas: sin sesión redirigen a
+`/login`.
 
 Al iniciar sesion se crea el `profile` si falta y, si el usuario no tiene datos,
 se ejecuta `initializeUserData(userId)`.
@@ -122,6 +126,7 @@ siguiente. El dia elegido pertenece al nuevo ciclo; con dia 30, agosto cubre del
 ## Rutas
 
 - `/login`
+- `/reset-password`
 - `/app`
 - `/app/transactions`
 - `/app/add`
