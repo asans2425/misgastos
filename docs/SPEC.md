@@ -1,8 +1,8 @@
-# Money Flow ARSA - SPEC
+# MoneyFlow ARSA - SPEC
 
 ## Vision
 
-Money Flow ARSA es una app personal de finanzas para registrar gastos e
+MoneyFlow ARSA es una app personal de finanzas para registrar gastos e
 ingresos con rapidez desde el movil y revisar el estado del mes.
 
 ## Concepto financiero

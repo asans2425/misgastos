@@ -86,7 +86,7 @@ export default async function AddTransactionPage() {
 
   return (
     <PageShell
-      description="Alta rapida de gastos e ingresos con reglas base de Money Flow ARSA."
+      description="Alta rapida de gastos e ingresos con reglas base de MoneyFlow ARSA."
       title="Nuevo movimiento"
     >
       <TransactionDraftForm

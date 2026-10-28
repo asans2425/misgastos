@@ -3,6 +3,7 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { prepareCurrentUser } from "@/lib/auth/prepareUser";
+import { getRequestOrigin } from "@/lib/auth/requestOrigin";
 import { isSupabaseSchemaMissingError } from "@/lib/supabase/errors";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -40,25 +41,6 @@ function getAuthErrorMessage(error: { message?: string; code?: string }) {
   return error.message ?? "No se ha podido completar la operación.";
 }
 
-function getRequestOrigin(requestHeaders: Headers) {
-  const requestOrigin = requestHeaders.get("origin");
-
-  if (requestOrigin) {
-    return requestOrigin;
-  }
-
-  const forwardedHost = requestHeaders.get("x-forwarded-host");
-  const host = forwardedHost ?? requestHeaders.get("host");
-  const forwardedProto = requestHeaders.get("x-forwarded-proto")?.split(",")[0];
-  const protocol = forwardedProto ?? (host?.startsWith("localhost") ? "http" : "https");
-
-  if (host) {
-    return `${protocol}://${host}`;
-  }
-
-  return null;
-}
-
 export async function authenticateWithPassword(
   _previousState: AuthFormState,
   formData: FormData,
@@ -68,32 +50,26 @@ export async function authenticateWithPassword(
   const intent = String(formData.get("intent") ?? "login");
 
   if (!email || !password) {
-    return { error: "Introduce email y contrasena." };
+    return { error: "Introduce email y contraseña." };
   }
 
   if (password.length < 6) {
-    return { error: "La contrasena debe tener al menos 6 caracteres." };
+    return { error: "La contraseña debe tener al menos 6 caracteres." };
   }
 
   const supabase = await createSupabaseServerClient();
 
   if (intent === "register") {
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-    });
+    const { data, error } = await supabase.auth.signUp({ email, password });
 
     if (error) {
       return { error: getAuthErrorMessage(error) };
     }
 
-    // Supabase intentionally returns an obfuscated user for an existing
-    // OAuth/email account instead of exposing whether the email is registered.
-    // Do not report a false successful registration in that case.
     if (data.user && (data.user.identities?.length ?? 0) === 0) {
       return {
         error:
-          "Ese email ya está asociado a una cuenta. Usa «He olvidado mi contraseña / entrar sin Google» para añadir la contraseña a esa misma cuenta.",
+          "Ese email ya está asociado a una cuenta. Usa «Crear contraseña para entrar sin Google» para añadir la contraseña a esa misma cuenta.",
       };
     }
 
@@ -146,40 +122,6 @@ export async function authenticateWithPassword(
   }
 
   redirect("/app");
-}
-
-export async function sendPasswordReset(
-  _previousState: AuthFormState,
-  formData: FormData,
-): Promise<AuthFormState> {
-  const email = String(formData.get("email") ?? "").trim();
-
-  if (!email) {
-    return { error: "Introduce el email de tu cuenta." };
-  }
-
-  const supabase = await createSupabaseServerClient();
-  const origin = getRequestOrigin(await headers());
-
-  if (!origin) {
-    return { error: "No se ha podido preparar la recuperación." };
-  }
-
-  const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: new URL(
-      "/auth/callback?next=/reset-password",
-      origin,
-    ).toString(),
-  });
-
-  if (error) {
-    return { error: getAuthErrorMessage(error) };
-  }
-
-  return {
-    message:
-      "Si existe una cuenta con ese email, recibirás un enlace para crear tu contraseña.",
-  };
 }
 
 export async function authenticateWithGoogle(): Promise<AuthFormState> {

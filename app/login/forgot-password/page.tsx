@@ -1,20 +1,12 @@
 import type { Metadata } from "next";
-import { redirect } from "next/navigation";
 import { WalletCards } from "lucide-react";
-import { ResetPasswordForm } from "@/components/auth/ResetPasswordForm";
-import { getCurrentUser } from "@/lib/auth/currentUser";
+import { ForgotPasswordForm } from "@/components/auth/ForgotPasswordForm";
 
 export const metadata: Metadata = {
-  title: "Crear contraseña",
+  title: "Recuperar contraseña",
 };
 
-export default async function ResetPasswordPage() {
-  const user = await getCurrentUser();
-
-  if (!user) {
-    redirect("/login");
-  }
-
+export default function ForgotPasswordPage() {
   return (
     <main className="flex min-h-screen items-center justify-center px-4 py-10">
       <section className="w-full max-w-sm rounded-lg border border-border-soft bg-surface p-5 shadow-sm">
@@ -23,12 +15,16 @@ export default async function ResetPasswordPage() {
             <WalletCards aria-hidden="true" size={22} />
           </div>
           <div>
-            <h1 className="text-xl font-semibold tracking-tight">Crear contraseña</h1>
-            <p className="text-sm text-slate-500">Money Flow ARSA</p>
+            <h1 className="text-xl font-semibold tracking-tight">
+              Crear contraseña
+            </h1>
+            <p className="text-sm text-slate-500">
+              También podrás entrar sin Google
+            </p>
           </div>
         </div>
 
-        <ResetPasswordForm />
+        <ForgotPasswordForm />
       </section>
     </main>
   );

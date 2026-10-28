@@ -1,4 +1,4 @@
-# Money Flow ARSA
+# MoneyFlow ARSA
 
 Aplicacion personal de finanzas, mobile-first, para registrar gastos e ingresos
 rapidamente desde el movil y analizar el mes.
