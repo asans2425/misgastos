@@ -124,6 +124,72 @@ function toNumber(value: unknown, fallback = 0) {
   return Number.isFinite(number) ? number : fallback;
 }
 
+async function sortQuickActionsByHabit({
+  quickActions,
+  supabase,
+  userId,
+}: {
+  quickActions: QuickActionRow[];
+  supabase: Supabase;
+  userId: string;
+}) {
+  if (quickActions.length < 2) {
+    return quickActions;
+  }
+
+  const since = new Date();
+  since.setFullYear(since.getFullYear() - 1);
+
+  const { data, error } = await supabase
+    .from("transactions")
+    .select("category_id,subcategory_id")
+    .eq("user_id", userId)
+    .eq("type", "expense")
+    .gte("date", since.toISOString().slice(0, 10));
+
+  if (error) {
+    throwIfSupabaseError(error);
+    return quickActions;
+  }
+
+  const exactUsage = new Map<string, number>();
+  const categoryUsage = new Map<string, number>();
+
+  for (const transaction of data ?? []) {
+    if (transaction.category_id) {
+      categoryUsage.set(
+        transaction.category_id,
+        (categoryUsage.get(transaction.category_id) ?? 0) + 1,
+      );
+    }
+
+    if (transaction.category_id && transaction.subcategory_id) {
+      const key = `${transaction.category_id}:${transaction.subcategory_id}`;
+      exactUsage.set(key, (exactUsage.get(key) ?? 0) + 1);
+    }
+  }
+
+  const usageFor = (action: QuickActionRow) => {
+    if (action.subcategory_id && action.category_id) {
+      return exactUsage.get(`${action.category_id}:${action.subcategory_id}`) ?? 0;
+    }
+
+    return action.category_id
+      ? categoryUsage.get(action.category_id) ?? 0
+      : 0;
+  };
+
+  return [...quickActions].sort((a, b) => {
+    const usageDifference = usageFor(b) - usageFor(a);
+
+    if (usageDifference !== 0) {
+      return usageDifference;
+    }
+
+    return a.sort_order - b.sort_order || a.label.localeCompare(b.label, "es");
+  });
+}
+
 function normalizeRpcHomeData(payload: RpcPayload): AppHomeData | null {
   const selectedMonth =
     typeof payload.selectedMonth === "string" ? payload.selectedMonth : null;
@@ -302,7 +368,14 @@ export async function loadAppHomeData({
     const normalized = data ? normalizeRpcHomeData(toObject(data) ?? {}) : null;
 
     if (normalized) {
-      return normalized;
+      return {
+        ...normalized,
+        quickActions: await sortQuickActionsByHabit({
+          quickActions: normalized.quickActions,
+          supabase,
+          userId,
+        }),
+      };
     }
   }
 
@@ -310,9 +383,18 @@ export async function loadAppHomeData({
     throwIfSupabaseError(error);
   }
 
-  return loadLegacyHomeData({
+  const legacyData = await loadLegacyHomeData({
     selectedMonthParam,
     supabase,
     userId,
   });
+
+  return {
+    ...legacyData,
+    quickActions: await sortQuickActionsByHabit({
+      quickActions: legacyData.quickActions,
+      supabase,
+      userId,
+    }),
+  };
 }

@@ -124,6 +124,18 @@ textarea {
   }
 }
 
+@keyframes moneyflow-quick-popover {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 .moneyflow-wallet-loader {
   animation: moneyflow-wallet-bounce 1.05s ease-in-out infinite;
 }
@@ -152,11 +164,19 @@ textarea {
   animation: moneyflow-route-progress 1.1s ease-in-out infinite;
 }
 
+.moneyflow-quick-popover {
+  animation: moneyflow-quick-popover 180ms ease-out both;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .moneyflow-wallet-loader,
   .moneyflow-bill,
   .moneyflow-splash-ring,
   .moneyflow-route-progress {
+    animation: none;
+  }
+
+  .moneyflow-quick-popover {
     animation: none;
   }
 }

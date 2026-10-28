@@ -3,7 +3,14 @@
 import { useActionState, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { CircleDollarSign, ListPlus, Loader2, X } from "lucide-react";
+import {
+  ChevronDown,
+  CircleDollarSign,
+  ListPlus,
+  Loader2,
+  Sparkles,
+  X,
+} from "lucide-react";
 import { createQuickExpense, type QuickExpenseState } from "@/app/app/actions";
 import { cn } from "@/lib/utils/cn";
 
@@ -115,6 +122,7 @@ function ModalForm({
 export function QuickActionsPanel({ actions, className }: QuickActionsPanelProps) {
   const router = useRouter();
   const [activeAction, setActiveAction] = useState<QuickActionItem | null>(null);
+  const [showHabituals, setShowHabituals] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
 
   useEffect(() => {
@@ -131,17 +139,17 @@ export function QuickActionsPanel({ actions, className }: QuickActionsPanelProps
     <>
       <section
         className={cn(
-          "rounded-lg border border-border-soft bg-surface p-3 shadow-sm",
+          "relative rounded-lg border border-border-soft bg-surface p-3 shadow-sm sm:p-4",
           className,
         )}
       >
-        <div className="mb-2 flex items-center justify-between gap-3">
+        <div className="flex items-center justify-between gap-3">
           <div>
             <h2 className="text-sm font-semibold text-slate-950 sm:text-base">
               AÑADIR GASTO RÁPIDO
             </h2>
             <p className="hidden text-xs text-slate-500 sm:block">
-              Toca una categoria habitual.
+              Elige uno de tus gastos más habituales.
             </p>
           </div>
           <Link
@@ -154,18 +162,56 @@ export function QuickActionsPanel({ actions, className }: QuickActionsPanelProps
           </Link>
         </div>
 
-        <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 sm:mx-0 sm:grid sm:grid-cols-[repeat(auto-fit,minmax(118px,1fr))] sm:overflow-visible sm:px-0">
-          {actions.map((action) => (
-            <button
-              className="min-h-9 min-w-24 shrink-0 rounded-md border border-border-soft bg-white px-3 py-1.5 text-center text-xs font-semibold leading-tight text-slate-700 transition hover:border-brand hover:bg-teal-50 sm:min-h-10 sm:min-w-0"
-              key={action.id}
-              onClick={() => setActiveAction(action)}
-              type="button"
-            >
-              {action.label}
-            </button>
-          ))}
-        </div>
+        <button
+          className="mt-3 flex min-h-14 w-full items-center justify-between gap-3 rounded-lg border border-brand/20 bg-teal-50 px-4 py-3 text-left transition hover:border-brand/40 hover:bg-teal-100"
+          onClick={() => setShowHabituals((visible) => !visible)}
+          type="button"
+        >
+          <span className="flex min-w-0 items-center gap-3">
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-md bg-brand text-white">
+              <Sparkles aria-hidden="true" size={18} />
+            </span>
+            <span className="min-w-0">
+              <span className="block truncate text-sm font-semibold text-teal-950">
+                Gastos habituales
+              </span>
+              <span className="block truncate text-xs text-teal-800">
+                Tus {Math.min(actions.length, 10)} accesos más usados
+              </span>
+            </span>
+          </span>
+          <ChevronDown
+            aria-hidden="true"
+            className={cn("shrink-0 transition-transform", showHabituals && "rotate-180")}
+            size={19}
+          />
+        </button>
+
+        {showHabituals ? (
+          <div className="moneyflow-quick-popover absolute bottom-[4.5rem] right-3 z-30 w-[min(320px,calc(100vw-2rem))] overflow-hidden rounded-lg border border-border-soft bg-white p-2 shadow-xl sm:right-4">
+            <p className="px-2 py-1.5 text-xs font-semibold uppercase tracking-wide text-slate-400">
+              Tus gastos más habituales
+            </p>
+            <div className="max-h-72 space-y-1 overflow-y-auto">
+              {actions.slice(0, 10).map((action) => (
+                <button
+                  className="flex min-h-11 w-full items-center justify-between gap-3 rounded-md px-3 py-2 text-left text-sm font-medium text-slate-700 transition hover:bg-teal-50 hover:text-teal-950"
+                  key={action.id}
+                  onClick={() => {
+                    setShowHabituals(false);
+                    setActiveAction(action);
+                  }}
+                  type="button"
+                >
+                  <span className="min-w-0 truncate">{action.label}</span>
+                  <span className="shrink-0 text-xs text-slate-400">
+                    {action.categoryName}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : null}
       </section>
 
       {activeAction ? (
